@@ -1,6 +1,10 @@
 import pandas as pd
 import numpy as np
 import glob
+import subprocess
+import os
+import platform
+import pathlib
 
 NOTHINGNESS = [
     '            [\"name\"] = \"Nothingness\",\n',
@@ -124,3 +128,33 @@ def get_node_id_by_name(tree, node_name):
             node_id_found = True
             break
     return node_id_found, node_id
+
+def get_pob_dir():
+    # open the text file for reading and read the first line of the file, which contains the directory path
+    POB_DIR = ""
+    pob_location = open("pob_location.txt", "r")
+    POB_DIR = pob_location.readline().rstrip()
+    pob_location.close()
+
+    # check if the file is empty, and get directory from user input if it is empty
+    if POB_DIR == "":
+        POB_DIR = input("Please enter the directory where your Path of Building is located: ")
+        file = open("pob_location.txt", "w")
+        file.write(POB_DIR)
+        file.close()
+
+    return POB_DIR
+
+def main():
+    POB_DIR = get_pob_dir()
+    replace_all_nodes_wrapper()
+    os_platform = platform.system()
+    if os_platform == "Linux":
+        subprocess.run(["sh", "UpdatePOB.sh", POB_DIR])
+    elif os_name == "Windows":
+        subprocess.run(["powershell", "UpdatePOB.ps1", POB_DIR])
+    else:
+        print("Unsupported operating system: " + os_name)
+
+if __name__ == "__main__":
+    main()
