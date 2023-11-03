@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import glob
 
 NOTHINGNESS = [
     '            [\"name\"] = \"Nothingness\",\n',
@@ -25,18 +26,24 @@ def replace_all_nodes_wrapper():
     modified_tree = load_tree()
     replace_all_nodes(modified_tree, original_tree)
 
-def replace_all_nodes(modified_tree, original_tree, basedir='./data/', import_file='test.tsv'):
-    replace_table = pd.read_csv(basedir+import_file, delimiter='\t')
-    # replace_only = (replace_table.Type!='small') & (replace_table.Type!='notable')
-    # replace_only = replace_table.Type=='keystone'
-    # replace_only = (replace_table.Type=='keystone') | (replace_table.Type=='mastery')
-    # replace_table = replace_table[replace_only].reset_index(drop=True)
+def replace_all_nodes(modified_tree, original_tree, basedir='./data/'):
+    all_jsons = glob.glob(basedir+'*.json')
+    if len(all_jsons) < 1:
+        print('ERROR: no JSON files found in data directory...')
+    all_node_data = pd.concat([pd.read_json(json_file, typ='series') for json_file in all_jsons])
+    node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
+    node_df = node_df.drop_duplicates()
+    nothingness_dupes = node_df[node_df['original'].duplicated(keep=False)]
+    node_df = node_df.drop(nothingness_dupes[nothingness_dupes['new']==-1].index)
 
-    for line in range(len(replace_table)):
-        # print(replace_table.loc[line].ID)
-        # print(replace_table.loc[line].NEW_ID)
+    if any(node_df['original'].duplicated()):
+        print('WARNING: mismatched duplicate nodes found:')
+        for node_id in np.where(node_df['original'].duplicated())[0]:
+            print('mismatch original node: '+str(node_df.iloc[node_id]['original'])) #+', new: '+str(node_df.iloc[node_id]['new']))
+
+    for line in range(len(node_df)):
         replace_node(modified_tree, original_tree,
-                int(replace_table.loc[line].ID), int(replace_table.loc[line].NEW_ID))
+                int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
     save_tree(modified_tree)
 
 def replace_node(modified_tree, original_tree, node_id, replace_id):
@@ -85,8 +92,9 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
     return modified_tree
 
 def get_node_by_id(tree, node_id):
-    start_offset = 10261
-    subtree = tree[start_offset:]
+    start_offset = 10553 #10261
+    end_offset = 72688 #66842
+    subtree = tree[start_offset:end_offset]
     node_str = '['+str(node_id)+']'
     node_start_found = False
     for line_idx, line in enumerate(subtree):

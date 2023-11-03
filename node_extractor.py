@@ -3,7 +3,8 @@ import pandas as pd
 
 def load_node_tree():
     full_tree = load_tree()
-    node_tree = full_tree[:69505]
+    # node_tree = full_tree[10553:77185] #full_tree[:69505]
+    node_tree = full_tree[10553:72688] #full_tree[:69505]
     return node_tree
 
 def find_all_nodes(start_idx=0):
@@ -41,12 +42,18 @@ def find_next_node(tree, start_idx=0):
                         node_end_found = True
                         node_data = tree[node_start_idx:node_end_idx]
                         break
+                # try:
                 for line_idx, line in enumerate(node_data):
                     is_keystone = check_for_keystone(node_data)
                     is_ascendancy, ascendancy_name = check_for_ascendancy(node_data)
                     is_notable = check_for_notable(node_data)
                     is_jewel = check_for_jewel(node_data)
                     is_mastery = check_for_mastery(node_data)
+                # except:
+                #     print('node name: '+str(node_name))
+                #     print('line idx: '+str(line_idx))
+                #     print('line: '+str(line))
+
                 if is_keystone:
                     node_type = 'keystone'
                 elif is_ascendancy and is_notable:
@@ -102,3 +109,10 @@ def check_for_mastery(subtree):
         if '[\"isMastery\"]' in line:
             return True
     return False
+
+def get_regular_nodes():
+    df = find_all_nodes().reset_index(drop=True)
+    # regular_df = df[df.type.isin(['small','notable','mastery','keystone'])]
+    regular_df = df[~df.type.isin(['jewel'])]
+    regular_df['new'] = -1
+    regular_df[['id','new']].to_csv('all_nodes.csv',index=False)
