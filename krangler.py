@@ -152,7 +152,7 @@ def main():
     if os_platform == "Linux":
         subprocess.run(["sh", "UpdatePOB.sh", POB_DIR])
     elif os_name == "Windows":
-        subprocess.run(["UpdatePOB.bat", POB_DIR])
+        subprocess.run(["powershell", "UpdatePOB.ps1", POB_DIR])
     else:
         print("Unsupported operating system: " + os_name)
 
