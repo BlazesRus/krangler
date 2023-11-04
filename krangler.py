@@ -147,6 +147,15 @@ def get_pob_dir():
 
 def main():
     POB_DIR = get_pob_dir()
+    #detect if using Path of Building Source instead of using compiled code
+    if os.path.isdir("POB_DIR/src/"):
+        OriginalTree_Dir = POB_DIR/src/TreeData/3_22
+    else:
+        OriginalTree_Dir = POB_DIR/TreeData/3_22
+    if os.path.isdir("POB_DIR/src/"):
+        POB_DIR = POB_DIR+/src/TreeData/Krangled3_22
+    else:
+        POB_DIR = POB_DIR+/TreeData/Krangled3_22
     replace_all_nodes_wrapper()
     os_platform = platform.system()
     if os_platform == "Linux":
