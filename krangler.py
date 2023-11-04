@@ -150,11 +150,11 @@ def main():
     replace_all_nodes_wrapper()
     os_platform = platform.system()
     if os_platform == "Linux":
-        subprocess.run(["sh", "UpdatePOB.sh", POB_DIR])
-    elif os_name == "Windows":
-        subprocess.run(["powershell", "UpdatePOB.ps1", POB_DIR])
+        subprocess.run(["sh", "./UpdatePOB.sh", POB_DIR])
+    elif os_platform == "Windows":
+        subprocess.run(["powershell", "./UpdatePOB.ps1", POB_DIR])
     else:
-        print("Unsupported operating system: " + os_name)
+        print("Unsupported operating system: " + os_platform)
 
 if __name__ == "__main__":
     main()
