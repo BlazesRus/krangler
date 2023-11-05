@@ -88,7 +88,7 @@ def replace_node_with_nothing(modified_tree, original_tree, node_id):
             return modified_tree
     node_found, node_start, node_end = get_node_by_id(modified_tree, node_id)
     #Debug message
-    print('Replacing node id '+str(node_id)+' with blank node.\n')
+    
     is_ascendancy = False
     is_mastery = False
     for line_idx in range(node_end-node_start):
@@ -100,14 +100,17 @@ def replace_node_with_nothing(modified_tree, original_tree, node_id):
         replace_lines = NOTHINGNESS_ASCENDANCY
         replace_start = 0
         replace_end = 4
+        print('Replacing node id '+str(node_id)+' with blank ascendancy node.\n')
     elif is_mastery:
         replace_lines = UNKNOWN_MASTERY
         replace_start = 0
         replace_end = 10
+        print('Replacing node id '+str(node_id)+' with blank mastery node.\n')
     else:
         replace_lines = NOTHINGNESS
         replace_start = 0
         replace_end = 3
+        #print('Replacing node id '+str(node_id)+' with blank node.\n')
     for replace_idx, line_idx in enumerate(range(node_start, node_start+replace_end-replace_start)):
         if 'ascendancyName' in replace_lines[replace_idx]:
             try:
