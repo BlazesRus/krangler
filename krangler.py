@@ -35,12 +35,12 @@ UNKNOWN_MASTERY = [
     '            [\"activeEffectImage\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n']
 
 def load_tree(outputDirectory, fname='tree.lua'):
-    fullPath = outputDirectory+'/'+fname
+    fullPath = outputDirectory+fname
     print('Loading tree from '+fullPath+'. \n')
     return open(outputDirectory+'/tree.lua','r').readlines()
 
 def save_tree(tree, outputDirectory, fname='tree.lua'):
-    fullPath = outputDirectory+'/'+fname
+    fullPath = outputDirectory+fname
     print('Saving edited tree to '+fullPath+'. \n')
     with open(fullPath,'w') as f:
         for line in tree:
@@ -208,9 +208,9 @@ def main():
     POB_DIR = get_pob_dir()
     #detect if using Path of Building Source instead of using compiled code
     if os.path.isdir("POB_DIR/src/"):
-        POB_DIR = POB_DIR+'/src/TreeData/Krangled3_22'
+        POB_DIR = POB_DIR+'/src/TreeData/Krangled3_22/'
     else:
-        POB_DIR = POB_DIR+'/TreeData/Krangled3_22'
+        POB_DIR = POB_DIR+'/TreeData/Krangled3_22/'
     replace_all_nodes_wrapper(POB_DIR)
     #Editing copied file instead of replacing file in directory
 
