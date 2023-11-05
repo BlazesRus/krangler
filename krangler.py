@@ -7,47 +7,36 @@ import platform
 import pathlib
 
 NOTHINGNESS = [
-    '            [\"name\"] = \"Nothingness\",\n',
     '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
+    '            [\"name\"] = \"Nothingness\",\n',
     '            [\"stats\"] = {},\n']
 
 NOTHINGNESS_ASCENDANCY = [
-    '            [\"name\"] = \"Unknown Ascendancy\",\n',
     '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
+    '            [\"name\"] = \"Unknown Ascendancy\",\n',
     '            [\"ascendancyName\"] = \"None\",\n',
     '            [\"stats\"] = {},\n']
 
 ASCENDANCY_ERROR = [
-    '            [\"name\"] = \"Ascendancy Replacement Error\",\n',
     '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
+    '            [\"name\"] = \"Ascendancy Replacement Error\",\n',
     '            [\"ascendancyName\"] = \"None\",\n',
     '            [\"stats\"] = {},\n']
 
-UNKNOWN_MASTERY = [
-    '            [\"name\"] = \"Unknown Mastery\",\n',
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"stats\"] = {},\n'
-    '            [\"isMastery\"] = \"true\",\n',
-    '            [\"activeIcon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"orbitIndex\"] = 0,\n'
-    '            [\"inactiveIcon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"masteryEffects\"] = {},\n'
-    '            [\"activeEffectImage\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n']
-
 def load_tree(outputDirectory, fname='tree.lua'):
     fullPath = outputDirectory+fname
-    print('Loading tree from '+fullPath+'. \n')
+ #   print('Loading tree from '+fullPath+'. \n')
     return open(outputDirectory+'/tree.lua','r').readlines()
 
 def save_tree(tree, outputDirectory, fname='tree.lua'):
     fullPath = outputDirectory+fname
-    print('Saving edited tree to '+fullPath+'. \n')
+ #   print('Saving edited tree to '+fullPath+'. \n')
     with open(fullPath,'w') as f:
         for line in tree:
             f.write(line)
 
-def replace_all_nodes_wrapper(outputDirectory):
-    original_tree = load_tree(outputDirectory)
+def replace_all_nodes_wrapper(inputDirectory, outputDirectory):
+    original_tree = load_tree(inputDirectory)
     modified_tree = original_tree
     replace_all_nodes(modified_tree, original_tree, outputDirectory)
 
@@ -63,10 +52,15 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
         for line in range(len(node_df)):
             replace_node_with_nothing(modified_tree, original_tree, int(node_df.iloc[line]['original']))
     else:
-        all_node_data = pd.concat([pd.read_json(json_file, typ='series') for json_file in all_jsons])
+        #First fix some errors inside any json files
+        all_node_data = pd.concat([pd.read_json(json_file, typ='series', dtype='dict', encoding_errors='ignore') for json_file in all_jsons], verify_integrity=True)
+        print('node_df stage starting \n')
         node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
+        print('dropping duplicates \n')
         node_df = node_df.drop_duplicates()
+        print('removing duplicated nothingness \n')
         nothingness_dupes = node_df[node_df['original'].duplicated(keep=False)]
+        print('indexing duplicated nothingness \n')
         node_df = node_df.drop(nothingness_dupes[nothingness_dupes['new']==-1].index)
 
         if any(node_df['original'].duplicated()):
@@ -76,7 +70,7 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
 
         for line in range(len(node_df)):
             replace_node(modified_tree, original_tree,
-                int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
+                    int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
 
     save_tree(modified_tree, outputDirectory)
 
@@ -87,25 +81,18 @@ def replace_node_with_nothing(modified_tree, original_tree, node_id):
             print('Original node string with id:'+ str(node_id) +' not found. \n')
             return modified_tree
     node_found, node_start, node_end = get_node_by_id(modified_tree, node_id)
-    #Debug message
-    
     is_ascendancy = False
     is_mastery = False
     for line_idx in range(node_end-node_start):
-            if 'ascendancyName' in modified_tree[node_start]:
-                ascendancy_line = modified_tree[node_start]
-                is_ascendancy = True
-            modified_tree.pop(node_start)
+        if 'ascendancyName' in original_tree[node_start]:
+            ascendancy_line = original_tree[node_start]
+            is_ascendancy = True
+        modified_tree.pop(node_start)
     if is_ascendancy:
         replace_lines = NOTHINGNESS_ASCENDANCY
         replace_start = 0
         replace_end = 4
-        print('Replacing node id '+str(node_id)+' with blank ascendancy node.\n')
-    elif is_mastery:
-        replace_lines = UNKNOWN_MASTERY
-        replace_start = 0
-        replace_end = 10
-        print('Replacing node id '+str(node_id)+' with blank mastery node.\n')
+        #print('Replacing node id '+str(node_id)+' with blank ascendancy node.\n')
     else:
         replace_lines = NOTHINGNESS
         replace_start = 0
@@ -169,51 +156,31 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
         elif is_MismatchedType==True:#Error: Mismatched nodetype
             if is_ascendancy:
                 replace_lines = [
-    '            [\"name\"] = \"Ascendancy Mismatch Error for node'+str(node_id)+'\",\n',
     '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"ascendancyName\"] = \"None\",\n',
+    '            [\"name\"] = \"Ascendancy Mismatch Error for node'+str(node_id)+'\",\n',
     '            [\"stats\"] = {},\n']
                 replace_start = 0
                 replace_end = 4
             else:
                 replace_lines = [
-    '            [\"name\"] = \"Mismatch Error for node'+str(node_id)+'\",\n',
+    '            [\"name\"] = \"Mismatch Error\",\n',
     '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
     '            [\"stats\"] = {},\n']
                 replace_start = 0
                 replace_end = 3
         #Error: Unknown replacement node
         elif replace_found == False:
-            if is_mastery:
-                replace_lines = [
-    '            [\"name\"] = \"Mastery Replacement Error\",\n',
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"stats\"] = {},\n'
-    '            [\"isMastery\"] = \"true\",\n',
-    '            [\"activeIcon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"orbitIndex\"] = 0,\n'
-    '            [\"inactiveIcon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"masteryEffects\"] = {},\n'
-    '            [\"activeEffectImage\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n']
-                replace_start = 0
-                replace_end = 10
-            else:
-                replace_lines = [
-    '            [\"name\"] = \"Invalid Replacement for node '+str(node_id)+'\",\n',
+            replace_lines = [
+    '            [\"name\"] = \"Invalid Replacement Error\",\n',
     '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
     '            [\"stats\"] = {},\n']
-                replace_start = 0
-                replace_end = 3
+            replace_start = 0
+            replace_end = 3
         elif is_ascendancy:
             replace_lines = NOTHINGNESS_ASCENDANCY
             replace_start = 0
             replace_end = 4
             print('Replacing ASCENDANCY with node id '+str(node_id)+' with nothing.\n')
-        elif is_mastery:
-            replace_lines = UNKNOWN_MASTERY
-            replace_start = 0
-            replace_end = 10
-            print('Replacing mastery node with id '+str(node_id)+' with nothing.\n')
         else:
             replace_lines = NOTHINGNESS
             replace_start = 0
@@ -283,12 +250,17 @@ def get_pob_dir():
 
 def main():
     POB_DIR = get_pob_dir()
+    OrigTree_DIR = POB_DIR
     #detect if using Path of Building Source instead of using compiled code
+    if os.path.isdir("POB_DIR/src/"):
+        OrigTree_DIR = POB_DIR+'/src/TreeData/3_22/'
+    else:
+        OrigTree_DIR = POB_DIR+'/TreeData/3_22/'
     if os.path.isdir("POB_DIR/src/"):
         POB_DIR = POB_DIR+'/src/TreeData/Krangled3_22/'
     else:
         POB_DIR = POB_DIR+'/TreeData/Krangled3_22/'
-    replace_all_nodes_wrapper(POB_DIR)
+    replace_all_nodes_wrapper(OrigTree_DIR, POB_DIR)
     #Editing copied file instead of replacing file in directory
 
 if __name__ == "__main__":
