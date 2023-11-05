@@ -17,17 +17,22 @@ NOTHINGNESS_ASCENDANCY = [
     '            [\"ascendancyName\"] = \"None\",\n',
     '            [\"stats\"] = {},\n']
 
+ASCENDANCY_ERROR = [
+    '            [\"name\"] = \"Ascendancy Replacement Error\",\n',
+    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
+    '            [\"ascendancyName\"] = \"None\",\n',
+    '            [\"stats\"] = {},\n']
+
 UNKNOWN_MASTERY = [
     '            [\"name\"] = \"Unknown Mastery\",\n',
     '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
     '            [\"stats\"] = {},\n'
     '            [\"isMastery\"] = \"true\",\n',
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"stats\"] = {},\n'
-    '            [\"isMastery\"] = \"true\",\n',
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
+    '            [\"activeIcon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
+    '            [\"orbitIndex\"] = 0,\n'
+    '            [\"inactiveIcon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
     '            [\"masteryEffects\"] = {},\n'
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n']
+    '            [\"activeEffectImage\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n']
 
 def load_tree(dname):
     return open(dname+'/tree.lua','r').readlines()
