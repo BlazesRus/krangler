@@ -73,9 +73,114 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
                 if(line.contains('[')):
                 #{
                     topLevel_luaNodeLineNumber = lineNumber;
-                    topLevelStorage[topLevel_luaNodeName] = line;
-                    if(line.contains('{')):
-                        inside_nodeLevel = True
+                    # if(StartedTagRead):#Only start saving scans once enter certain depth of xml file
+                    # #{
+                    #     if(InsideClosingTag):
+                    #     #{
+                    #         if(LineChar=='>'):
+                    #         #{
+                    #             if (CurrentTag == EntryTagName):#Exiting entry tag
+                    #             #{
+                    #                 EntryTagName.clear();
+                    #             #}
+                    #             else://Exiting inner tag 
+                    #             #{
+
+                    #             #}
+                    #             CurrentTag = "";//Reset it to clear buffer so next tag has fresh storage
+                    #             TagContentStage = 0;
+                    #             InsideClosingTag = false; InsideTag = false;
+                    #         #}
+                    #     }
+                    #     else if (InsideTag):
+                    #     #{
+                    #         if (LineChar == '>'):
+                    #         #{
+                    #             if (EntryTagName.empty()):
+                    #             #{
+                    #                 EntryTagName = CurrentTag;
+                    #             #}
+                    #             else
+                    #             #{ 
+                    #             #}
+                    #         #}
+                    #         else if (CurrentTag.empty())
+                    #         #{
+                    #             if (ScanBuffer.empty())
+                    #             #{
+                    #                 if (LineChar == '!')//Detecting potential Commented Out Parts
+                    #                     PotentialComment = true;
+                    #                 else if(LineChar=='/')
+                    #                 #{
+
+                    #                 #}
+                    #                 else if (LineChar != ' ' && LineChar != '	' && LineChar != '\n')
+                    #                     ScanBuffer += LineChar;
+                    #             #}
+                    #             else if (LineChar == '/')//Closed Tag without any arguments
+                    #             #{
+                    #                 CurrentTag = ScanBuffer;
+                    #                 ScanBuffer = "/";
+                    #             #}
+                    #             else if (LineChar == ' ' || LineChar == '	' || LineChar == '\n')
+                    #             #{
+                    #                 CurrentTag = ScanBuffer;
+                    #                 ScanBuffer.clear();
+                    #                 //if (LineChar != '\\')
+                    #                 //{
+                    #                 //    ScanningArgData = true; Stage = 0;
+                    #                 //}
+                    #             #}
+                    #             else if (LineChar != ' ' && LineChar != '	' && LineChar != '\n')
+                    #             #{
+                    #                 ScanBuffer += LineChar;
+                    #             #}
+                    #         #}
+                    #         ##------------------Scanning Argument Field/Values-------------------------------
+                    #         else:
+                    #         #{
+                    #             if (ScanBuffer.empty()):
+                    #             {
+                    #                 if (LineChar != ' ' && LineChar != '	' && LineChar != '\n')
+                    #                 {
+                    #                     ScanBuffer += LineChar;
+                    #                 }
+                    #             }
+                    #             else if (LineChar == ' ' || LineChar == '	' || LineChar == '\n')
+                    #             {
+                    #                 //CurrentTag = ScanBuffer;
+                    #                 ScanBuffer.clear();
+                    #                 //if (LineChar != '\\')
+                    #                 //{
+                    #                 //    ScanningArgData = true; Stage = 0;
+                    #                 //}
+                    #             }
+                    #             else if (LineChar != ' ' && LineChar != '	' && LineChar != '\n')
+                    #             {
+                    #                 ScanBuffer += LineChar;
+                    #             }
+                    #         }
+                    #     }
+                    #     else
+                    #     {
+                    #         if (LineChar == '<')
+                    #         {
+                    #             //Send Description field into tag target
+
+                    #             InsideTag = true; ScanBuffer.clear();
+                    #         }
+                    #         else//If description value is empty, add data to description field buffer
+                    #         {
+                    #             ScanBuffer += LineChar;
+                    #         }
+                    #     }
+                    # }
+                    # else
+                    # {
+                    #     #topLevelStorage[topLevel_luaNodeName] = line;
+                    #     if(line.contains('{')):
+                    #         inside_nodeLevel = True
+                    # }
                 #}
                 else:
                 #{
