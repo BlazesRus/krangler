@@ -44,6 +44,7 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
     all_jsons = glob.glob(basedir+'*.json')
     if len(all_jsons) < 1:
         print('No JSON files found in data directory...Converting all nodes into nothing instead \n')
+        #Replace with code that doesn't use json file later
         all_node_data = pd.read_json('all_nodes_nothingness.json', typ='series')
         node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
         node_df = node_df.drop_duplicates()
@@ -52,15 +53,15 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
         for line in range(len(node_df)):
             replace_node_with_nothing(modified_tree, original_tree, int(node_df.iloc[line]['original']))
     else:
-        #First fix some errors inside any json files
+        #Files need to follow stringify 4 space format with 2 spaces on bracket or similar format or will fail to read json files (minify format will most likely fail)
         all_node_data = pd.concat([pd.read_json(json_file, typ='series', dtype='dict', encoding_errors='ignore') for json_file in all_jsons], verify_integrity=True)
-        print('node_df stage starting \n')
+        #print('node_df stage starting \n')
         node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
-        print('dropping duplicates \n')
+        #print('dropping duplicates \n')
         node_df = node_df.drop_duplicates()
-        print('removing duplicated nothingness \n')
+        #print('removing duplicated nothingness \n')
         nothingness_dupes = node_df[node_df['original'].duplicated(keep=False)]
-        print('indexing duplicated nothingness \n')
+        #print('indexing duplicated nothingness \n')
         node_df = node_df.drop(nothingness_dupes[nothingness_dupes['new']==-1].index)
 
         if any(node_df['original'].duplicated()):
@@ -103,7 +104,7 @@ def replace_node_with_nothing(modified_tree, original_tree, node_id):
             try:
                 modified_tree.insert(line_idx, ascendancy_line)
             except:
-                print('error: node '+str(node_id)+'; replace: '+str(replace_id))
+                print('ascendancy replace_idx replacement error: node '+str(node_id)+".\n")
         else:
             modified_tree.insert(line_idx, replace_lines[replace_idx])
     return modified_tree
@@ -121,8 +122,8 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
     else:
         if type(replace_id) == str:
             replace_found, replace_id = get_node_id_by_name(original_tree, replace_id)
-            if replace_found == false:
-                print('Replacement node with id'+ str(replace_id) +' string not found for node with id '+str(node_id)+'. \n')
+            if replace_found == False:
+                print('Replacement node with id '+ str(replace_id) +' not found for node with id '+str(node_id)+'. \n')
     node_found, node_start, node_end = get_node_by_id(modified_tree, node_id)
     if replace_id > 0 and replace_found:
         replace_found, replace_start, replace_end = get_node_by_id(original_tree, replace_id)
@@ -130,8 +131,6 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
             print('Replacement '+str(replace_id)+' for node '+str(node_id)+' not found \n')
     is_ascendancy = False
     is_mastery = False
-    #if replace_found == False:
-    #    print('Replacing node id '+str(node_id)+' with blank node with invalid node message.\n')#Debug message
     for line_idx in range(node_end-node_start):
         if 'ascendancyName' in original_tree[node_start]:
             if replace_found:
@@ -151,9 +150,8 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
             is_ascendancy = True
         modified_tree.pop(node_start)
     if node_found:
-        if replace_id > 0:
-            replace_lines = original_tree[replace_start:replace_end]
-        elif is_MismatchedType==True:#Error: Mismatched nodetype
+        #Error: Mismatched nodetype
+        if is_MismatchedType==True:
             if is_ascendancy:
                 replace_lines = [
     '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
@@ -176,11 +174,13 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
     '            [\"stats\"] = {},\n']
             replace_start = 0
             replace_end = 3
+        elif replace_id > 0:
+            replace_lines = original_tree[replace_start:replace_end]
         elif is_ascendancy:
             replace_lines = NOTHINGNESS_ASCENDANCY
             replace_start = 0
             replace_end = 4
-            print('Replacing ASCENDANCY with node id '+str(node_id)+' with nothing.\n')
+            #print('Replacing ASCENDANCY with node id '+str(node_id)+' with nothing.\n')
         else:
             replace_lines = NOTHINGNESS
             replace_start = 0
@@ -195,7 +195,7 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
             else:
                 modified_tree.insert(line_idx, replace_lines[replace_idx])
     else:
-        print('node '+str(node_id)+' or replacement '+str(replace_id)+' not found, returning original tree. \n')
+        print('node id '+str(node_id)+' with replacement node with id '+str(replace_id)+' not found, returning original tree. \n')
     return modified_tree
 
 def get_node_by_id(tree, node_id):
