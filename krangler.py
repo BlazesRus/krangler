@@ -113,24 +113,34 @@ def replace_node_with_nothing(modified_tree, original_tree, node_id):
 
 def replace_node(modified_tree, original_tree, node_id, replace_id):
     is_MismatchedType = False
-    if type(node_id) == str:
+    if type(node_id) == str:#checking if string formated node id is found?
         node_found, node_id = get_node_id_by_name(original_tree, node_id)
         if not(node_found):
-            print('Original node string with id:'+ str(node_id) +'not found. \n')
+            print('Original string node with id:'+ str(node_id) +' not found. \n')
+            return modified_tree
+    else:
+        node_found, node_id = get_node_id_by_name(original_tree, node_id)
+        if not(node_found):
+            print('Original non-string node with id:'+ str(node_id) +' not found. \n')
             return modified_tree
     replace_found = False
+    replacement_found_by_name = False
+    node_start = 0
+    node_end = 0
     if replace_id==-1:
         replace_found = True
     else:
         if type(replace_id) == str:
+            #checking if replacement node exists by name on original tree
             replace_found, replace_id = get_node_id_by_name(original_tree, replace_id)
             if replace_found == False:
-                print('Replacement node with id '+ str(replace_id) +' not found for node with id '+str(node_id)+'. \n')
-    node_found, node_start, node_end = get_node_by_id(modified_tree, node_id)
-    if replace_id > 0 and replace_found:
-        replace_found, replace_start, replace_end = get_node_by_id(original_tree, replace_id)
-        if replace_found == False:
-            print('Replacement '+str(replace_id)+' for node '+str(node_id)+' not found \n')
+                #if replacement node doesn't exist by name, check if exists by id on original tree
+                node_found, node_start, node_end = get_node_by_id(original_tree, node_id)
+                if replace_id > 0 and replace_found:
+                    replace_found, replace_start, replace_end = get_node_by_id(original_tree, replace_id)
+                    if replace_found == False:
+                        print('Replacement '+str(replace_id)+' for node '+str(node_id)+' not found \n')
+            
     is_ascendancy = False
     is_mastery = False
     for line_idx in range(node_end-node_start):
@@ -151,27 +161,24 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
                 replace_end = 4
             is_ascendancy = True
         modified_tree.pop(node_start)
-    if node_found and replace_found:
-        if replace_id > 0:
-            replace_lines = original_tree[replace_start:replace_end]
-        elif is_ascendancy:
-            replace_lines = NOTHINGNESS_ASCENDANCY
-            replace_start = 0
-            replace_end = 4
-        else:
-            replace_lines = NOTHINGNESS
-            replace_start = 0
-            replace_end = 3
-        for replace_idx, line_idx in enumerate(range(node_start, node_start+replace_end-replace_start)):
-            if 'ascendancyName' in replace_lines[replace_idx]:
-                try:
-                    modified_tree.insert(line_idx, ascendancy_line)
-                except:
-                    print('error: node '+str(node_id)+'; replace: '+str(replace_id))
-            else:
-                modified_tree.insert(line_idx, replace_lines[replace_idx])
+    if replace_id > 0:
+        replace_lines = original_tree[replace_start:replace_end]
+    elif is_ascendancy:
+        replace_lines = NOTHINGNESS_ASCENDANCY
+        replace_start = 0
+        replace_end = 4
     else:
-        print('node id '+str(node_id)+' with replacement node with id '+str(replace_id)+' not found, returning original tree. \n')
+        replace_lines = NOTHINGNESS
+        replace_start = 0
+        replace_end = 3
+    for replace_idx, line_idx in enumerate(range(node_start, node_start+replace_end-replace_start)):
+        if 'ascendancyName' in replace_lines[replace_idx]:
+            try:
+                modified_tree.insert(line_idx, ascendancy_line)
+            except:
+                print('error: node '+str(node_id)+'; replace: '+str(replace_id))
+        else:
+            modified_tree.insert(line_idx, replace_lines[replace_idx])
     return modified_tree
 
 def get_node_by_id(tree, node_id):
