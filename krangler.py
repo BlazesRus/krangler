@@ -12,43 +12,56 @@ NOTHINGNESS = [
     '            [\"stats\"] = {},\n']
 
 NOTHINGNESS_ASCENDANCY = [
-    '            [\"name\"] = \"Nothingness\",\n',
+    '            [\"name\"] = \"Unknown Ascendancy\",\n',
     '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
     '            [\"ascendancyName\"] = \"None\",\n',
     '            [\"stats\"] = {},\n']
 
-def load_tree(dname='./data/'):
+UNKNOWN_MASTERY = [
+    '            [\"name\"] = \"Unknown Mastery\",\n',
+    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
+    '            [\"stats\"] = {},\n'
+    '            [\"isMastery\"] = \"true\",\n',
+    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
+    '            [\"stats\"] = {},\n'
+    '            [\"isMastery\"] = \"true\",\n',
+    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
+    '            [\"masteryEffects\"] = {},\n'
+    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n']
+
+def load_tree(dname):
     return open(dname+'/tree.lua','r').readlines()
 
-def save_tree(tree, basedir='./data/', fname='tree_edit.lua'):
-    with open(basedir+fname,'w') as f:
+def save_tree(tree, outputDirectory, fname='tree.lua'):
+    with open(outputDirectory+fname,'w') as f:
         for line in tree:
             f.write(line)
 
-def replace_all_nodes_wrapper():
-    original_tree = load_tree()
+def replace_all_nodes_wrapper(dname):
+    original_tree = load_tree(dname)
     modified_tree = original_tree
-    replace_all_nodes(modified_tree, original_tree)
+    replace_all_nodes(modified_tree, original_tree, outputDirectory)
 
-def replace_all_nodes(modified_tree, original_tree, basedir='./data/'):
+def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./data/'):
     all_jsons = glob.glob(basedir+'*.json')
     if len(all_jsons) < 1:
-        print('ERROR: no JSON files found in data directory...')
-    all_node_data = pd.concat([pd.read_json(json_file, typ='series') for json_file in all_jsons])
+        print('No JSON files found in data directory...Converting all nodes into nothing instead')
+    all_node_data = pd.read_json('all_nodes_nothingness.json', typ='series') if len(all_jsons) < 1 else pd.concat([pd.read_json(json_file, typ='series') for json_file in all_jsons])
     node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
     node_df = node_df.drop_duplicates()
     nothingness_dupes = node_df[node_df['original'].duplicated(keep=False)]
     node_df = node_df.drop(nothingness_dupes[nothingness_dupes['new']==-1].index)
 
-    if any(node_df['original'].duplicated()):
-        print('WARNING: mismatched duplicate nodes found:')
-        for node_id in np.where(node_df['original'].duplicated())[0]:
-            print('mismatch original node: '+str(node_df.iloc[node_id]['original'])) #+', new: '+str(node_df.iloc[node_id]['new']))
+	if any(node_df['original'].duplicated()):
+		print('WARNING: mismatched duplicate nodes found:')
+		for node_id in np.where(node_df['original'].duplicated())[0]:
+			print('mismatch original node: '+str(node_df.iloc[node_id]['original'])) #+', new: '+str(node_df.iloc[node_id]['new']))
 
-    for line in range(len(node_df)):
-        replace_node(modified_tree, original_tree,
-                int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
-    save_tree(modified_tree)
+	for line in range(len(node_df)):
+		replace_node(modified_tree, original_tree,
+			int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
+
+    save_tree(modified_tree, outputDirectory)
 
 def replace_node(modified_tree, original_tree, node_id, replace_id):
     if type(node_id) == str:
@@ -149,21 +162,11 @@ def main():
     POB_DIR = get_pob_dir()
     #detect if using Path of Building Source instead of using compiled code
     if os.path.isdir("POB_DIR/src/"):
-        OriginalTree_Dir = POB_DIR+'/src/TreeData/3_22'
-    else:
-        OriginalTree_Dir = POB_DIR+'/TreeData/3_22'
-    if os.path.isdir("POB_DIR/src/"):
         POB_DIR = POB_DIR+'/src/TreeData/Krangled3_22'
     else:
         POB_DIR = POB_DIR+'/TreeData/Krangled3_22'
-    replace_all_nodes_wrapper()
-    os_platform = platform.system()
-    if os_platform == "Linux":
-        subprocess.run(["sh", "./UpdatePOB.sh", POB_DIR])
-    elif os_platform == "Windows":
-        subprocess.run(["powershell", "./UpdatePOB.ps1", POB_DIR])
-    else:
-        print("Unsupported operating system: " + os_platform)
+    replace_all_nodes_wrapper(POB_DIR)
+    #Editing copied file instead of replacing file in directory
 
 if __name__ == "__main__":
     main()
