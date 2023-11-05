@@ -75,6 +75,8 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
 
     save_tree(modified_tree, outputDirectory)
 
+#Use breakpoints at error message prints in Visual Studio to find bugs in json file
+
 def replace_node_with_nothing(modified_tree, original_tree, node_id):
     if type(node_id) == str:
         node_found, node_id = get_node_id_by_name(original_tree, node_id)
@@ -149,43 +151,17 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
                 replace_end = 4
             is_ascendancy = True
         modified_tree.pop(node_start)
-    if node_found:
-        #Error: Mismatched nodetype
-        if is_MismatchedType==True:
-            if is_ascendancy:
-                replace_lines = [
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"name\"] = \"Ascendancy Mismatch Error for node'+str(node_id)+'\",\n',
-    '            [\"stats\"] = {},\n']
-                replace_start = 0
-                replace_end = 4
-            else:
-                replace_lines = [
-    '            [\"name\"] = \"Mismatch Error\",\n',
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"stats\"] = {},\n']
-                replace_start = 0
-                replace_end = 3
-        #Error: Unknown replacement node
-        elif replace_found == False:
-            replace_lines = [
-    '            [\"name\"] = \"Invalid Replacement Error\",\n',
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"stats\"] = {},\n']
-            replace_start = 0
-            replace_end = 3
-        elif replace_id > 0:
+    if node_found and replace_found:
+        if replace_id > 0:
             replace_lines = original_tree[replace_start:replace_end]
         elif is_ascendancy:
             replace_lines = NOTHINGNESS_ASCENDANCY
             replace_start = 0
             replace_end = 4
-            #print('Replacing ASCENDANCY with node id '+str(node_id)+' with nothing.\n')
         else:
             replace_lines = NOTHINGNESS
             replace_start = 0
             replace_end = 3
-            #print('Replacing node id '+str(node_id)+' with nothing.\n')
         for replace_idx, line_idx in enumerate(range(node_start, node_start+replace_end-replace_start)):
             if 'ascendancyName' in replace_lines[replace_idx]:
                 try:
