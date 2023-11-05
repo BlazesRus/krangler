@@ -201,7 +201,7 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
                         topLevelStorage["RootEnd"] = line;
                 #}
             #}
-            else:
+            #else:
             #{
             #}
         #}
@@ -209,7 +209,7 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
     else:
     #{
         #Files need to follow stringify 4 space format with 2 spaces on bracket or similar format or will fail to read json files (minify format will most likely fail)
-        all_node_data = pd.concat([pd.read_json(json_file, typ='series', dtype='dict', encoding_errors='ignore') for json_file in all_jsons], verify_integrity=True)
+        all_node_data = pd.concat([pd.read_json(json_file, typ='series', dtype='dict', encoding_errors='ignore') for json_file in all_jsons])
         #print('node_df stage starting \n')
         node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
         #print('dropping duplicates \n')
@@ -273,9 +273,9 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
     node_index = -1#avoid replacing parameter info
     node_start = -1
     node_end = -1
-    if isinstance(node_id, int):#{
+    if type(node_id) != str:#{
         #Check to make sure both replacement and node_id have same keytype
-        if isinstance(replace_id, int):
+        if type(node_id) != str:
             Does_TargetNodeHaveID = True
         else:
             return
@@ -288,7 +288,7 @@ def replace_node(modified_tree, original_tree, node_id, replace_id):
     else:
     #{
         #Check to make sure both replacement and node_id have same keytype
-        if isinstance(replace_id, int):
+        if type(node_id) != str:
             return
             
         node_found, node_index = get_node_id_by_name(original_tree, node_id)
