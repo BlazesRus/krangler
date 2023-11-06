@@ -1,3 +1,4 @@
+from io import TextIOWrapper
 from tkinter import INSIDE
 import pandas as pd
 import numpy as np
@@ -55,86 +56,114 @@ class LuaNode:
     return self.name
     
 class TreeStorage:
-  def __init__(self, RootStart, RootEnd, topLevelStorage:dict[str, LuaNode], nodeSubgroup:dict[str, LuaNode], otherSubnodeStorage:dict[str, LuaNode]):
-    self.RootStart = RootStart
-    self.RootEnd = RootEnd
-    self.topLevelStorage = topLevelStorage
-    self.nodeSubgroup = nodeSubgroup
-    self.otherSubnodeStorage = otherSubnodeStorage
+    def __init__(self, RootStart, RootEnd, topLevelStorage:dict[str, LuaNode], nodeSubgroup:dict[str, LuaNode], otherSubnodeStorage:dict[str, LuaNode]):
+        self.RootStart = RootStart
+        self.RootEnd = RootEnd
+        self.topLevelStorage = topLevelStorage
+        self.nodeSubgroup = nodeSubgroup
+        self.otherSubnodeStorage = otherSubnodeStorage
     
-  def get_name(self):
-    return self.name
+    def get_name(self):
+        return self.name
 
-def reconstructAndSave_Tree(TreeStorage, outputDirectory, fname='tree.lua'):
-    fullPath = outputDirectory+fname
- #   print('Saving edited tree to '+fullPath+'. \n')
-    
-    nodeWhitespace = 4;
-    with open(fullPath,'w') as f:
-        f.write(TreeStorage.RootStart)
-        for topLevelNode in TreeStorage.topLevelStorage:#{
-            f.write('    [\"')
-            f.write(topLevelNode.name)#outputs ["nodes"]= { at this level
+    def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode):
+        if(parentNode.hasListInfo):
+            if(skillTreeNode.nodeContent==''):
+                f.write('\"]= {},\n')
+            else:
+                f.write('\"]= {\n')
+                f.write(skillTreeNode.nodeContent)
+                f.write('\n        },n')
+        elif(parentNode.hasSubNodes):#{
+            f.write('[')
+            f.write(parentNode.name)#[240]= { #skillTree ID is outputted at this level for first instance of this function if skillTree nodes
             f.write('\"]= ')
-            if(topLevelNode.hasSubNodes==False):
-                f.write(topLevelNode.nodeContent)
-                f.write(',\n')
-            elif(topLevelNode.name=='nodes'):
-                nodeWhitespace = 8
-                for i, skillTreeNode in enumerate(TreeStorage.nodeSubgroup):
-                #{
-                    if i:#Every element but the first element in list
-                        f.write(',\n')
+            for i, node in enumerate(parentNode.subnodes):
+            #{
+                if i:#Every element but the first element in list
+                    f.write(',\n')
+                f.write('[')
+                f.write(node.name)# ["name"]= at this level for first instance of this function if skillTree nodes
+                f.write('\"]= ')
+                self.recursiveNodeOutput(f, currentTopLevelNode, parentNode)
+            #}
+        else:#Has context (not used )
+            f.write('[')
+            f.write(node.name)
+            f.write('\"]= ')
 
-                    f.write('        [')
-                    f.write(skillTreeNode.name)#[240]= { #skillTree ID is outputted at this level
-                    f.write('\"]= {')
-                    for i, node in enumerate(skillTreeNode.subnodes):
+    def reconstructAndSave_Tree(self, outputDirectory, fname='tree.lua'):
+        fullPath = outputDirectory+fname
+    #   print('Saving edited tree to '+fullPath+'. \n')
+
+        nodeWhitespace = 4;
+        with open(fullPath,'w') as f:
+            f.write(self.RootStart)
+            for topLevelNode in self.topLevelStorage:#{
+                f.write('    [\"')
+                f.write(topLevelNode.name)#outputs ["nodes"]= { at this level
+                f.write('\"]= ')
+                if(topLevelNode.hasSubNodes==False):
+                    f.write(topLevelNode.nodeContent)
+                    f.write(',\n')
+                elif(topLevelNode.name=='nodes'):
+                    nodeWhitespace = 8
+                    for i, skillTreeNode in enumerate(self.nodeSubgroup):
                     #{
                         if i:#Every element but the first element in list
                             f.write(',\n')
-                        #for i, skillTreeNode in enumerate(TreeStorage.otherSubnodeStorage):
-                                
-                    #}
-                    f.write('        },n')
-                #}
-            else:
-                nodeWhitespace = 8
-                for i, skillTreeNode in enumerate(TreeStorage.otherSubnodeStorage):
-                #{
-                    if i:#Every element but the first element in list
-                        f.write(',\n')
-                    f.write('        [')
-                    f.write(skillTreeNode.name)
-                    if(skillTreeNode.hasListInfo):#{
-                        if(nodeContent==''):
-                            f.write('\"]= {},\n')
-                        else:
-                            f.write('\"]= {\n')
-                            f.write(skillTreeNode.nodeContent)
-                            f.write('\n        },n')
-                    #}
-                    elif(skillTreeNode.hasSubNodes):#{
-                        f.write('\"]= {\n')
-                        for i, node in enumerate(TreeStorage.otherSubnodeStorage):
-                        #{
-                            if i:#Every element but the first element in list
-                                f.write(',\n')
-                            #for i, skillTreeNode in enumerate(TreeStorage.otherSubnodeStorage):
-                                
-                        #}
+
+                        f.write('        [')
+                        f.write(skillTreeNode.name)#[240]= { #skillTree ID is outputted at this level
+                        f.write('\"]= ')
+                        # for i, node in enumerate(skillTreeNode.subnodes):
+                        # #{
+                        #     if i:#Every element but the first element in list
+                        #         f.write(',\n')
+                        #     f.write('        [')
+                        #     f.write(node.name)# ["name"]= at this level
+                        #     f.write('\"]= ')
+                            
+                        # #}
                         f.write('        },n')
                     #}
-                    else:#{
-                        f.write('\"]= ')
-                        f.write(skillTreeNode.nodeContent)
-                        f.write(',\n')
+                else:
+                    nodeWhitespace = 8
+                    for i, skillTreeNode in enumerate(self.otherSubnodeStorage):
+                    #{
+                        if i:#Every element but the first element in list
+                            f.write(',\n')
+                        f.write('        [')
+                        f.write(skillTreeNode.name)
+                        if(skillTreeNode.hasListInfo):#{
+                            if(skillTreeNode.nodeContent==''):
+                                f.write('\"]= {},\n')
+                            else:
+                                f.write('\"]= {\n')
+                                f.write(skillTreeNode.nodeContent)
+                                f.write('\n        },n')
+                        #}
+                        elif(skillTreeNode.hasSubNodes):#{
+                            f.write('\"]= {\n')
+                            for i, node in enumerate(self.otherSubnodeStorage):
+                            #{
+                                if i:#Every element but the first element in list
+                                    f.write(',\n')
+                                #for i, skillTreeNode in enumerate(self.otherSubnodeStorage):
+                            
+                            #}
+                            f.write('        },n')
+                        #}
+                        else:#{
+                            f.write('\"]= ')
+                            f.write(skillTreeNode.nodeContent)
+                            f.write(',\n')
+                        #}
                     #}
-                #}
-        #}
-        f.write(skillTreeNode.RootEnd)
-        f.close();
-            
+            #}
+            f.write(skillTreeNode.RootEnd)
+            f.close();
+
 #Depreciated once finish parser code
 def save_tree(tree, outputDirectory, fname='tree.lua'):
     fullPath = outputDirectory+fname
