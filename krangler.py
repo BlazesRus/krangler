@@ -30,35 +30,49 @@ def load_tree(outputDirectory, fname='tree.lua'):
     return open(outputDirectory+'/tree.lua','r').readlines()
 
 class LuaSubNode:
-  def __init__(self, name:str, hasSubNodes:bool, originalLineNumber=-1, nodeContent:str='', subnodes:dict[str,str]={}):
+  def __init__(self, name:str, hasSubNodes:bool, hasListInfo:bool=false, nodeContent:str='', subnodes:dict[str,str]={}, ):
     self.name = name
     self.hasSubNodes = hasSubNodes
-    self.originalLineNumber = originalLineNumber
+    self.hasListInfo = hasListInfo
     self.nodeContent = nodeContent
-    
+    #Actual subnodes stored inside the parent LuaNode
+    self.subnodes = subnodes
   
   def get_name(self):
     return self.name
 
 class LuaNode:
-  def __init__(self, name:str, hasSubNodes:bool, originalLineNumber=-1, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}):
+  def __init__(self, name:str, hasSubNodes:bool, originalLineNumber=-1, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}, recursiveSubNodes:dict[str, LuaSubNode]={}):
     self.name = name
     self.hasSubNodes = hasSubNodes
+    #orginalLineNumber for sending info when debugging
     self.originalLineNumber = originalLineNumber
     self.nodeContent = nodeContent
+    self.subnodes = subnodes
+    self.recursiveSubNodes = recursiveSubNodes
     
-  
+  def get_name(self):
+    return self.name
+    
+class TreeStorage:
+  def __init__(self, RootStart, RootEnd, topLevelStorage:dict[str, LuaNode], nodeSubgroup:dict[str, LuaNode], otherSubnodeStorage:dict[str, LuaNode]):
+    self.RootStart = RootStart
+    self.RootEnd = RootEnd
+    self.topLevelStorage = topLevelStorage
+    self.nodeSubgroup = nodeSubgroup
+    self.otherSubnodeStorage = otherSubnodeStorage
+    
   def get_name(self):
     return self.name
 
-def reconstructAndSave_Tree(RootStart, RootEnd, topLevelStorage:dict[str, LuaNode], nodeSubgroup:dict[str, LuaNode], otherSubnodeStorage:dict[str, LuaNode],
-    outputDirectory, fname='tree.lua'):
+def reconstructAndSave_Tree(TreeStorage, outputDirectory, fname='tree.lua'):
     fullPath = outputDirectory+fname
  #   print('Saving edited tree to '+fullPath+'. \n')
+    
     nodeWhitespace = 4;
     with open(fullPath,'w') as f:
         f.write(RootStart)
-        for topLevelNode in topLevelStorage:#{
+        for topLevelNode in TreeStorage.topLevelStorage:#{
             f.write('    [\"')
             f.write(topLevelNode.name)
             f.write('\"]= ')
@@ -67,20 +81,57 @@ def reconstructAndSave_Tree(RootStart, RootEnd, topLevelStorage:dict[str, LuaNod
                 f.write(',\n')
             elif(topLevelNode.name=='nodes'):
                 nodeWhitespace = 8
-                for skillTreeNode in nodeSubgroup:
+                for i, skillTreeNode in enumerate(TreeStorage.nodeSubgroup):
+                #{
+                    if i:#Every element but the first element in list
+                        f.write(',\n')
+                    if(skillTreeNode.hasListInfo):#{
+                        f.write('\"]= {\n')
+                        f.write(nodeContent)
+                        f.write('        },n')
+                    #}
+                    else:
+                        f.write('        [')
+                        f.write(skillTreeNode.name)
+                        f.write('\"]= {\n')
+                        f.write('        },n')
+                #}
+            else:
+                nodeWhitespace = 8
+                for i, skillTreeNode in enumerate(TreeStorage.otherSubnodeStorage):
+                #{
+                    if i:#Every element but the first element in list
+                        f.write(',\n')
                     f.write('        [')
                     f.write(skillTreeNode.name)
-                    f.write('\"]= {\n')
-                    
-            else:
-            
-
+                    if(skillTreeNode.hasListInfo):#{
+                        if(nodeContent==''):
+                            f.write('\"]= {},\n')
+                        else:
+                            f.write('\"]= {\n')
+                            f.write(nodeContent)
+                            f.write('\n        },n')
+                    #}
+                    else if(skillTreeNode.hasSubNodes)#{
+                        f.write('\"]= {\n')
+                        for i, skillTreeNode in enumerate(TreeStorage.otherSubnodeStorage):
+                        #{
+                            if i:#Every element but the first element in list
+                                f.write(',\n')
+                        #}
+                        f.write('        },n')
+                    #}
+                    else:#{
+                        f.write('\"]= ')
+                        f.write(nodeContent)
+                        f.write(',\n')
+                    #}
+                #}
         #}
         f.write(RootEnd)
         f.close();
             
-
-#Depreciated once finish par
+#Depreciated once finish parser code
 def save_tree(tree, outputDirectory, fname='tree.lua'):
     fullPath = outputDirectory+fname
  #   print('Saving edited tree to '+fullPath+'. \n')
@@ -132,11 +183,27 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
                         scanBuffer = '';
                     elif lineChar==']':
                         topLevel_luaNodeName = scanBuffer;
+                        scanBuffer = '';
                         if(line.contains(',')):
                             topLevelStorage[topLevel_luaNodeName] = topLevel_luaNodeName, False;
+                        else:
+                            topLevelStorage[topLevel_luaNodeName] = topLevel_luaNodeName, True;
                     else:
                         scanBuffer += lineChar;
                 #}
+            #}
+            elif(topLevel_luaNodeName=='nodes')#{
+                if(topLevelStorage[topLevel_luaNodeName].hasSubNodes):#{
+            
+                #}
+                else:#{
+                    for lineChar in line:
+                    #{
+                    #}
+                #}
+            #}
+            elif(topLevelStorage[topLevel_luaNodeName].hasSubNodes):#{
+            
             #}
             else:#{
                 for lineChar in line:
