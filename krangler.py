@@ -66,31 +66,32 @@ class TreeStorage:
     def get_name(self):
         return self.name
 
-    def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode):
+    def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode, recursiveLevel=1):
         if(parentNode.hasListInfo):
-            if(skillTreeNode.nodeContent==''):
-                f.write('\"]= {},\n')
+            if(parentNode.nodeContent==''):
+                f.write('\"]= {}\n')
             else:
                 f.write('\"]= {\n')
-                f.write(skillTreeNode.nodeContent)
-                f.write('\n        },n')
+                f.write(parentNode.nodeContent)
+                f.write('\n}n')
         elif(parentNode.hasSubNodes):#{
             f.write('[')
             f.write(parentNode.name)#[240]= { #skillTree ID is outputted at this level for first instance of this function if skillTree nodes
             f.write('\"]= ')
             for i, node in enumerate(parentNode.subnodes):
-            #{
-                if i:#Every element but the first element in list
-                    f.write(',\n')
-                f.write('[')
-                f.write(node.name)# ["name"]= at this level for first instance of this function if skillTree nodes
-                f.write('\"]= ')
-                self.recursiveNodeOutput(f, currentTopLevelNode, parentNode)
+            #{#Nwwd to retrieve actual subNode info from topLevelNode
+                # if i:#Every element but the first element in list
+                #     f.write(',\n')
+                # f.write('[')
+                # f.write(node.name)# ["name"]= at this level for first instance of this function if skillTree nodes
+                # f.write('\"]= ')
+                # self.recursiveNodeOutput(f, currentTopLevelNode, parentNode)
             #}
         else:#Has context (not used )
             f.write('[')
             f.write(node.name)
             f.write('\"]= ')
+            f.write(parentNode.nodeContent)
 
     def reconstructAndSave_Tree(self, outputDirectory, fname='tree.lua'):
         fullPath = outputDirectory+fname
