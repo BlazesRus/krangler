@@ -364,3 +364,82 @@ def replace_all_nodes_wrapper(inputDirectory, outputDirectory):
 
 def replace_all_nodes(modified_tree:TreeStorage, original_tree:TreeStorage, outputDirectory, basedir='./data/'):
     all_jsons = glob.glob(basedir+'*.json')
+	
+
+def reconstructAndSave_Tree(TreeStorage, outputDirectory, fname='tree.lua'):
+    fullPath = outputDirectory+fname
+ #   print('Saving edited tree to '+fullPath+'. \n')
+    
+    nodeWhitespace = 4;
+    with open(fullPath,'w') as f:
+        f.write(TreeStorage.RootStart)
+        for topLevelNode in TreeStorage.topLevelStorage:#{
+            f.write('    [\"')
+            f.write(topLevelNode.name)
+            f.write('\"]= ')
+            if(topLevelNode.hasSubNodes==False):
+                f.write(topLevelNode.nodeContent)
+                f.write(',\n')
+            elif(topLevelNode.name=='nodes'):
+                nodeWhitespace = 8
+                for i, skillTreeNode in enumerate(TreeStorage.nodeSubgroup):
+                #{
+                    if i:#Every element but the first element in list
+                        f.write(',\n')
+                    #skillTree node outputted at this [240]= {
+                    if(skillTreeNode.hasListInfo):#{
+                        f.write('\"]= {\n')
+                        f.write(skillTreeNode.nodeContent)
+                        f.write('        }')
+                    #}
+                    else:
+                        f.write('        [')
+                        f.write(skillTreeNode.name)
+                        f.write('\"]= {')
+                        #for "masteryEffects" skill
+                        for i, node in enumerate(skillTreeNode.subnodes):
+                        #{
+                            if i:#Every element but the first element in list
+                                f.write(',\n')
+                            #for i, skillTreeNode in enumerate(TreeStorage.otherSubnodeStorage):
+                                
+                        #}
+                        f.write('        },n')
+                #}
+            else:
+                nodeWhitespace = 8
+                for i, skillTreeNode in enumerate(TreeStorage.otherSubnodeStorage):
+                #{
+                    if i:#Every element but the first element in list
+                        f.write(',\n')
+                    f.write('        [')
+                    f.write(skillTreeNode.name)
+                    if(skillTreeNode.hasListInfo):#{
+                        if(nodeContent==''):
+                            f.write('\"]= {},\n')
+                        else:
+                            f.write('\"]= {\n')
+                            f.write(skillTreeNode.nodeContent)
+                            f.write('\n        },n')
+                    #}
+                    elif(skillTreeNode.hasSubNodes):#{
+                        f.write('\"]= {\n')
+                        for i, node in enumerate(TreeStorage.otherSubnodeStorage):
+                        #{
+                            if i:#Every element but the first element in list
+                                f.write(',\n')
+                            #for i, skillTreeNode in enumerate(TreeStorage.otherSubnodeStorage):
+                                
+                        #}
+                        f.write('        },n')
+                    #}
+                    else:#{
+                        f.write('\"]= ')
+                        f.write(skillTreeNode.nodeContent)
+                        f.write(',\n')
+                    #}
+                #}
+        #}
+        f.write(skillTreeNode.RootEnd)
+        f.close();
+            
