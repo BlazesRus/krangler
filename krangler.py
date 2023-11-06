@@ -1,5 +1,4 @@
 from tkinter import INSIDE
-from typing import Dict
 import pandas as pd
 import numpy as np
 import glob
@@ -40,7 +39,8 @@ class LuaNode:
   def get_name(self):
     return self.name
 
-def reconstructAndSave_Tree(RootStart, RootEnd, topLevelStorage:Dict[str, LuaNode], nodeSubgroup:Dict[str, LuaNode], otherSubnodeStorage:Dict[str, LuaNode], outputDirectory, fname='tree.lua'):
+def reconstructAndSave_Tree(RootStart, RootEnd, topLevelStorage:dict[str, LuaNode], nodeSubgroup:dict[str, LuaNode], otherSubnodeStorage:dict[str, LuaNode],
+    outputDirectory, fname='tree.lua'):
     fullPath = outputDirectory+fname
  #   print('Saving edited tree to '+fullPath+'. \n')
     with open(fullPath,'w') as f:
@@ -84,10 +84,10 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
     #Lines after last node group set here (should  result in value of '}')
     RootEnd = ''
     #top level nodes such as "nodes" and "max_x" initialized here
-    topLevelStorage:Dict[str, LuaNode] = {}
+    topLevelStorage:dict[str, LuaNode] = {}
     #store nodes here for easy editing of nodes
-    nodeSubgroup:Dict[str, LuaNode] = {}
-    otherSubnodeStorage:Dict[str, LuaNode] = {}
+    nodeSubgroup:dict[str, LuaNode] = {}
+    otherSubnodeStorage:dict[str, LuaNode] = {}
 
 
     for line in original_tree:#{
