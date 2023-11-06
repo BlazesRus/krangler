@@ -31,9 +31,9 @@ def load_tree(outputDirectory, fname='tree.lua'):
     return open(outputDirectory+'/tree.lua','r').readlines()
 
 class LuaSubNode:
-  def __init__(self, name:str, topLevelKey:list<str>, SubNodes:bool=false, hasListInfo:bool=false, nodeContent:str='', subnodes:dict[str,str]={} ):
+  def __init__(self, name:str, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
     self.name = name
-    #Keynames based on (parent's topLevelKey or subnode's name if parent is in subnodes)+_+name
+    #Keynames based on (parent's topLevelKey or subnode's name if parent is in subnodes)+_+name (can't use lists as key so using string instead)
     self.topLevelKey = topLevelKey
     self.hasSubNodes = hasSubNodes
     self.hasListInfo = hasListInfo
@@ -45,28 +45,26 @@ class LuaSubNode:
     return self.name
 
 class LuaNode:
-    def __init__(self, name:str, hasSubNodes:bool, originalLineNumber=-1, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}, 
-        recursiveSubNodes:dict[list<str>, LuaSubNode]={}):
+    def __init__(self, name:str, hasSubNodes:bool, originalLineNumber=-1, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}, recursiveSubNodes:dict[str, LuaSubNode]={}):
         self.name = name
         self.hasSubNodes = hasSubNodes
         #orginalLineNumber for sending info when debugging
         self.originalLineNumber = originalLineNumber
         self.nodeContent = nodeContent
         self.subnodes = subnodes
-        self.recursiveSubNodes = recursiveSubNodes
+        self.recursiveSubNodes:dict[str, LuaSubNode] = recursiveSubNodes
     
     def get_name(self):
         return self.name
     
-    def add_SubNodeFromTopLevel(self, name:str, SubNodes:bool=false, hasListInfo:bool=false, nodeContent:str=''):
-        subnodes[name] = LuaSubNode(name, {}, SubNodes, hasListInfo, nodeContent)
+    def add_SubNodeFromTopLevel(self, name:str, hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
+        self.subnodes[name] = LuaSubNode(name, '', hasSubNodes, hasListInfo, nodeContent)
     
     
-    def add_SubNodeToSubnode(self, name:str, parentKey:list<str>, SubNodes:bool=false, hasListInfo:bool=false, nodeContent:str=''):
+    def add_SubNodeToSubnode(self, name:str, parentKey:str, SubNodes:bool=false, hasListInfo:bool=false, nodeContent:str=''):
     #if size is one, then parent key is stored inside subnodes
-        #parentKey+,+name
-        topLevelKey:list<str> = parentKey
-        topLevelKey.append(name)
+        #parentKey+_+name
+        topLevelKey:str = parentKey+'_'+name
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(name, topLevelKey, SubNodes, hasListInfo, nodeContent)
     
 class TreeStorage:
