@@ -29,12 +29,24 @@ def load_tree(outputDirectory, fname='tree.lua'):
  #   print('Loading tree from '+fullPath+'. \n')
     return open(outputDirectory+'/tree.lua','r').readlines()
 
-class LuaNode:
-  def __init__(self, name:str, hasSubNodes:bool, originalLineNumber=-1, nodeContent:str=''):
+class LuaSubNode:
+  def __init__(self, name:str, hasSubNodes:bool, originalLineNumber=-1, nodeContent:str='', subnodes:dict[str,str]={}):
     self.name = name
     self.hasSubNodes = hasSubNodes
     self.originalLineNumber = originalLineNumber
     self.nodeContent = nodeContent
+    
+  
+  def get_name(self):
+    return self.name
+
+class LuaNode:
+  def __init__(self, name:str, hasSubNodes:bool, originalLineNumber=-1, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}):
+    self.name = name
+    self.hasSubNodes = hasSubNodes
+    self.originalLineNumber = originalLineNumber
+    self.nodeContent = nodeContent
+    
   
   def get_name(self):
     return self.name
@@ -43,15 +55,25 @@ def reconstructAndSave_Tree(RootStart, RootEnd, topLevelStorage:dict[str, LuaNod
     outputDirectory, fname='tree.lua'):
     fullPath = outputDirectory+fname
  #   print('Saving edited tree to '+fullPath+'. \n')
+    nodeWhitespace = 4;
     with open(fullPath,'w') as f:
         f.write(RootStart)
         for topLevelNode in topLevelStorage:#{
             f.write('    [\"')
-            f.write(topLevelNode.name);
+            f.write(topLevelNode.name)
             f.write('\"]= ')
             if(topLevelNode.hasSubNodes==False):
-                f.write(topLevelNode.nodeContent);
-                f.write(',\n');
+                f.write(topLevelNode.nodeContent)
+                f.write(',\n')
+            elif(topLevelNode.name=='nodes'):
+                nodeWhitespace = 8
+                for skillTreeNode in nodeSubgroup:
+                    f.write('        [')
+                    f.write(skillTreeNode.name)
+                    f.write('\"]= {\n')
+                    
+            else:
+            
 
         #}
         f.write(RootEnd)
