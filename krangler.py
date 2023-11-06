@@ -129,29 +129,19 @@ class TreeStorage:
                     #{
                         if i:#Every element but the first element in list
                             f.write(',\n')
-
                         f.write('        [')
                         f.write(skillTreeNode.name)#[240]= { #skillTree ID is outputted at this level
                         f.write('\"]= ')
-                        # for i, node in enumerate(skillTreeNode.subnodes):
-                        # #{
-                        #     if i:#Every element but the first element in list
-                        #         f.write(',\n')
-                        #     f.write('        [')
-                        #     f.write(node.name)# ["name"]= at this level
-                        #     f.write('\"]= ')
-                            
-                        # #}
-                        f.write('        },n')
+                        self.recursiveNodeOutput(f, self.nodeSubgroup, skillTreeNode)
                     #}
                 else:
-                    nodeWhitespace = 8
-                    for i, skillTreeNode in enumerate(self.otherSubnodeStorage):
+                    for i, skillTreeNode in enumerate(self.nodeSubgroup):
                     #{
                         if i:#Every element but the first element in list
                             f.write(',\n')
                         f.write('        [')
-                        f.write(skillTreeNode.name)
+                        f.write(skillTreeNode.name)#[240]= { #skillTree ID is outputted at this level
+                        f.write('\"]= ')
                         if(skillTreeNode.hasListInfo):#{
                             if(skillTreeNode.nodeContent==''):
                                 f.write('\"]= {},\n')
@@ -160,22 +150,8 @@ class TreeStorage:
                                 f.write(skillTreeNode.nodeContent)
                                 f.write('\n        },n')
                         #}
-                        elif(skillTreeNode.hasSubNodes):#{
-                            f.write('\"]= {\n')
-                            for i, node in enumerate(self.otherSubnodeStorage):
-                            #{
-                                if i:#Every element but the first element in list
-                                    f.write(',\n')
-                                #for i, skillTreeNode in enumerate(self.otherSubnodeStorage):
-                            
-                            #}
-                            f.write('        },n')
-                        #}
-                        else:#{
-                            f.write('\"]= ')
-                            f.write(skillTreeNode.nodeContent)
-                            f.write(',\n')
-                        #}
+                        else:
+                            self.recursiveNodeOutput(f, self.otherSubnodeStorage, skillTreeNode)
                     #}
             #}
             f.write(skillTreeNode.RootEnd)
