@@ -78,14 +78,18 @@ class TreeStorage:
             f.write('[')
             f.write(parentNode.name)#[240]= { #skillTree ID is outputted at this level for first instance of this function if skillTree nodes
             f.write('\"]= ')
+            actualSubNode:LuaSubNode;
+            #separate variable to prevent needing to reduce level after exit for loop
+            nodeLevel:int = recursiveLevel+1
             for i, node in enumerate(parentNode.subnodes):
-            #{#Nwwd to retrieve actual subNode info from topLevelNode
-                # if i:#Every element but the first element in list
-                #     f.write(',\n')
-                # f.write('[')
-                # f.write(node.name)# ["name"]= at this level for first instance of this function if skillTree nodes
-                # f.write('\"]= ')
-                # self.recursiveNodeOutput(f, currentTopLevelNode, parentNode)
+            #{#Need to retrieve actual subNode info from topLevelNode
+                if i:#Every element but the first element in list
+                    f.write(',\n')
+                f.write('[')
+                actualSubNode = currentTopLevelNode.recursiveSubNodes[node]
+                f.write(actualSubNode.name)# ["name"]= at this level for first instance of this function if skillTree nodes
+                f.write('\"]= ')
+                self.recursiveNodeOutput(f, currentTopLevelNode, parentNode, ++nodeLevel)
             #}
         else:#Has context (not used )
             f.write('[')
