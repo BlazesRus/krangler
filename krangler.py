@@ -31,15 +31,16 @@ def load_tree(outputDirectory, fname='tree.lua'):
     return open(outputDirectory+'/tree.lua','r').readlines()
 
 class LuaSubNode:
-  def __init__(self, name:str, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
-    self.name = name
-    #Keynames based on (parent's topLevelKey or subnode's name if parent is in subnodes)+_+name (can't use lists as key so using string instead)
-    self.topLevelKey = topLevelKey
-    self.hasSubNodes = hasSubNodes
-    self.hasListInfo = hasListInfo
-    self.nodeContent = nodeContent
-    #Actual subnodes stored inside the parent LuaNode
-    self.subnodes = subnodes
+    def __init__(self, name:str, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
+        #if name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)
+        self.name = name
+        #Keynames based on (parent's topLevelKey or subnode's name if parent is in subnodes)+_+name (can't use lists as key so using string instead)
+        self.topLevelKey = topLevelKey
+        self.hasSubNodes = hasSubNodes
+        self.hasListInfo = hasListInfo
+        self.nodeContent = nodeContent
+        #Actual subnodes stored inside the parent LuaNode
+        self.subnodes = subnodes
   
   def get_name(self):
     return self.name
@@ -79,17 +80,22 @@ class TreeStorage:
         return self.name
 
     def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode, recursiveLevel=1):
+        # # Left Padding of the string(based on https://www.geeksforgeeks.org/fill-a-python-string-with-spaces/)
+        # whitespacePaddedOutput = ('{: >recursiveLevel*4}'.format(string))
+        # print(f'\"{whitespacePaddedOutput}\"')
+        whitespacePaddedOutput:str
         if(parentNode.hasListInfo):
             if(parentNode.nodeContent==''):
                 f.write('\"]= {}\n')
             else:
                 f.write('\"]= {\n')
                 f.write(parentNode.nodeContent)
-                f.write('\n}n')
+                f.write('\n}')
         elif(parentNode.hasSubNodes):#{
-            f.write('[')
+            whitespacePaddedOutput = ('{: >recursiveLevel*4}'.format('['))
+            f.write(f'\"{whitespacePaddedOutput}\"')
             f.write(parentNode.name)#[240]= { #skillTree ID is outputted at this level for first instance of this function if skillTree nodes
-            f.write('\"]= ')
+            f.write('\"]= {')
             actualSubNode:LuaSubNode;
             #separate variable to prevent needing to reduce level after exit for loop
             nodeLevel:int = recursiveLevel+1
@@ -97,15 +103,28 @@ class TreeStorage:
             #{#Need to retrieve actual subNode info from topLevelNode
                 if i:#Every element but the first element in list
                     f.write(',\n')
-                f.write('[')
-                actualSubNode = currentTopLevelNode.recursiveSubNodes[node]
-                f.write(actualSubNode.name)# ["name"]= at this level for first instance of this function if skillTree nodes
-                f.write('\"]= ')
-                self.recursiveNodeOutput(f, currentTopLevelNode, parentNode, ++nodeLevel)
+                if(node.name[0]=='{'):#{
+                    #for use for subobject of ["masteryEffects"] node for {} grouping for effects
+                    whitespacePaddedOutput = ('{: >nodeLevel*4}'.format('{'))
+                    f.write(f'\"{whitespacePaddedOutput}\"')
+                    self.recursiveNodeOutput(f, currentTopLevelNode, parentNode, nodeLevel+1)
+                    whitespacePaddedOutput = ('{: >nodeLevel*4}'.format('}'))
+                    f.write(f'\"{whitespacePaddedOutput}\"')
+                #}
+                else:
+                    whitespacePaddedOutput = ('{: >nodeLevel*4}'.format('['))
+                    f.write(f'\"{whitespacePaddedOutput}\"')
+                    actualSubNode = currentTopLevelNode.recursiveSubNodes[node]
+                    f.write(node.name)# ["name"]= at this level for first instance of this function if skillTree nodes
+                    f.write('\"]= ')
+                    self.recursiveNodeOutput(f, currentTopLevelNode, parentNode, nodeLevel+1)
             #}
-        else:#Has context (not used )
-            f.write('[')
-            f.write(node.name)
+            whitespacePaddedOutput = ('{: >recursiveLevel*4}'.format('['))
+            f.write(f'\"{whitespacePaddedOutput}\"')
+        else:
+            whitespacePaddedOutput = ('{: >recursiveLevel*4}'.format('['))
+            f.write(f'\"{whitespacePaddedOutput}\"')
+            f.write(parentNode.name)
             f.write('\"]= ')
             f.write(parentNode.nodeContent)
 
