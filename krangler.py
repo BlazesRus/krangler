@@ -258,7 +258,10 @@ class TreeStorage:
         
     def nullifyAllSkillTreeNodes(self, fileData):
         print('Remove all stats and art from tree--placeholder command')
-
+        
+    def replace_node(original_tree, node_id, replace_id):
+        print('Placeholder')
+        
 def load_tree(outputDirectory, fname='tree.lua'):
     fullPath = outputDirectory+fname
  #   print('Loading tree from '+fullPath+'. \n')
@@ -296,7 +299,7 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
 
         for line in range(len(node_df)):
             #Sending information of node group passed to make sure don't replace any important nodes
-            #replace_node(modified_tree, original_tree, int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
+            modified_tree.replace_node(original_tree, int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
     #}
     modified_tree.reconstructAndSave_Tree(outputDirectory)
 
