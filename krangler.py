@@ -297,9 +297,10 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
             for node_id in np.where(node_df['original'].duplicated())[0]:
                 print('mismatch original node: '+str(node_df.iloc[node_id]['original'])) #+', new: '+str(node_df.iloc[node_id]['new']))
 
-        for line in range(len(node_df)):
-            #Sending information of node group passed to make sure don't replace any important nodes
-            modified_tree.replace_node(original_tree, int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
+  #      for line in range(len(node_df)):
+  #          #Sending information of node group passed to make sure don't replace any important nodes
+  #          modified_tree.replace_node(original_tree, int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
+        #Test NodeTree generation and reconstruction before creating new code for replacing nodes
     #}
     modified_tree.reconstructAndSave_Tree(outputDirectory)
 
