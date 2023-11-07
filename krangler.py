@@ -285,7 +285,13 @@ class TreeStorage:
     def nullifyAllSkillTreeNodes(self, fileData):
         print('Remove all stats and art from tree--placeholder command')
         
-    def replace_node(original_tree, node_id, replace_id):
+    def replace_node(original_tree, node_id:str, replace_id:str):
+        print('Placeholder')
+
+    def replace_nodes(original_tree, nodeReplacementInfo:dict[str, str]):
+        print('Placeholder')
+
+    def nullifyUnusedNodes(original_tree, nodeReplacementInfo:dict[str, str]):
         print('Placeholder')
         
 def load_tree(outputDirectory, fname='tree.lua'):
@@ -300,6 +306,7 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     original_tree:TreeStorage
     original_tree.generateNodeTree(originalFileData)
     modified_tree:TreeStorage = original_tree
+    nodeReplacementInfo:dict[str, str]={}
     if len(all_jsons) < 1:
     #{
         print('No JSON files found in data directory...Converting all nodes into nothing instead \n')
@@ -321,10 +328,13 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
             for node_id in np.where(node_df['original'].duplicated())[0]:
                 print('mismatch original node: '+str(node_df.iloc[node_id]['original'])) #+', new: '+str(node_df.iloc[node_id]['new']))
 
-  #      for line in range(len(node_df)):
-  #          #Sending information of node group passed to make sure don't replace any important nodes
-  #          modified_tree.replace_node(original_tree, int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
+        for line in range(len(node_df)):
+            nodeReplacementInfo[node_df.iloc[line]['original']] = node_df.iloc[line]['new']
+
         #Test NodeTree generation and reconstruction before creating new code for replacing nodes
+        modified_tree.replace_nodes(original_tree, nodeReplacementInfo)
+
+        modified_tree.replace_nodes(original_tree, nodeReplacementInfo)
     #}
     modified_tree.reconstructAndSave_Tree(outputDirectory)
 
