@@ -173,7 +173,7 @@ class TreeStorage:
             f.close();
 
     def recursivelyLoadNodeInput(self, lineChar, scanLevel, topLevel_luaNodeName, scanBuffer, lastNodeKey, indentationLevel=3):
-        currentNodeKey:str
+        currentNodeKey:str = lastNodeKey
         if scanLevel=='':
             if lineChar=='{':
                 scanLevel = '{'
@@ -185,8 +185,8 @@ class TreeStorage:
             if lineChar==']':
                 currentNodeKey = scanBuffer
                 scanBuffer = ''
-                print('placeholdercode')# self.topLevelStorage[topLevel_luaNodeName].add_SubNodeFromTopLevel(lastNodeKey)#Add node to Tree
-                scanLevel = 'nextOrContent'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
+                self.topLevelStorage[topLevel_luaNodeName].add_SubNodeToSubnode(lastNodeKey)#Add node to Tree
+                scanLevel = 'nextOrContent'#Search for either node content or subnodes
             else:
                 scanBuffer+=lineChar
         elif scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
@@ -194,13 +194,13 @@ class TreeStorage:
                 ++indentationLevel
                 self.nodeSubgroup[-1].hasSubNodes = True
                 scanLevel = ''
-                scanLevel, topLevel_luaNodeName, scanBuffer = self.recursivelyLoadNodeInput(lineChar, scanLevel, topLevel_luaNodeName, scanBuffer, lastNodeKey, indentationLevel)
+                scanLevel, topLevel_luaNodeName, scanBuffer, indentationLevel = self.recursivelyLoadNodeInput(lineChar, scanLevel, topLevel_luaNodeName, scanBuffer, lastNodeKey, indentationLevel)
             elif lineChar is not ' ' and lineChar is not '=':#["points"]'s groups ["totalPoints"]= uses this
                 scanLevel = 'nodeContent'
                 scanBuffer = lineChar
         elif scanLevel=='nodeContent':
             if lineChar==',' or lineChar=='\n':
-                print('placeholdercode')#self.topLevelStorage[topLevel_luaNodeName].subnodes[currentNodeKey].nodeContent = scanBuffer
+                self.topLevelStorage[topLevel_luaNodeName].subnodes[currentNodeKey].nodeContent = scanBuffer
             else:
                 scanBuffer += lineChar;
         return scanLevel, topLevel_luaNodeName#making sure to pass values back to main function
@@ -277,7 +277,7 @@ class TreeStorage:
                                     scanBuffer += lineChar;
                         else:
                             #At indentationLevel==3, scanning for things like ["name"] now (node added to subnodes once scanned)
-                            scanLevel, topLevel_luaNodeName = self.recursivelyLoadNodeInput(lineChar, scanLevel, topLevel_luaNodeName, lastNodeKey)
+                            scanLevel, topLevel_luaNodeName, scanBuffer, indentationLevel  = self.recursivelyLoadNodeInput(lineChar, scanLevel, topLevel_luaNodeName, scanBuffer, lastNodeKey)
                     #}
             #}
         #}
