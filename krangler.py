@@ -65,7 +65,7 @@ class LuaNode:
         self.subnodes[name] = LuaSubNode(name, '', hasSubNodes, hasListInfo, nodeContent)
     
     
-    def add_SubNodeToSubnode(self, name:str, parentKey:str, SubNodes:bool=false, hasListInfo:bool=false, nodeContent:str=''):
+    def add_SubNodeToSubnode(self, name:str, parentKey:str, SubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
     #if size is one, then parent key is stored inside subnodes
         #parentKey+_+name
         topLevelKey:str = parentKey+'_'+name
@@ -172,20 +172,45 @@ class TreeStorage:
             f.write(skillTreeNode.RootEnd)
             f.close();
 
-    def recursivelyLoadNodeInput(self, recursiveLevel=1):
-        print('Loading Data lua data deeper into scope--placeholder command')
-        
+    def recursivelyLoadNodeInput(self, fileData, lineChar, indentationLevel=3):
+        if scanLevel=='':
+            if lineChar=='{':
+                scanLevel = '{'
+            elif(lineChar=='}'):#Exiting topLevelNode (ignoring the comma that might be after)
+                topLevel_luaNodeName = ''
+        elif scanLevel=='{' and lineChar=='[':
+            scanLevel = '['
+        elif scanLevel=='[':
+            if lineChar==']':
+                lastNodeKey = scanBuffer
+                scanBuffer = ''
+                self.topLevelStorage[topLevel_luaNodeName].add_SubNodeFromTopLevel(lastNodeKey)#Add node to Tree (SkillNodeID created here)
+                scanLevel = 'nextOrContent'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
+            else:
+                scanBuffer+=lineChar
+        elif scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
+            if lineChar=='{':
+                ++indentationLevel
+                self.nodeSubgroup[-1].hasSubNodes = True
+                scanLevel = ''
+                self.recursivelyLoadNodeInput()
+            elif lineChar is not ' ' and lineChar is not '=':#["points"]'s groups ["totalPoints"]= uses this
+                scanLevel = 'nodeContent'
+                scanBuffer = lineChar
+        elif scanLevel=='nodeContent':
+            if lineChar==',' or lineChar=='\n':
+                self.topLevelStorage[topLevel_luaNodeName].subnodes[lastNodeKey].nodeContent = scanBuffer
+            else:
+                scanBuffer += lineChar;
+
     def generateNodeTree(self, fileData):
         topLevel_luaNodeLineNumber = -1
         topLevel_luaNodeName = ''
         lineNumber = -1
         scanLevel = ''
         scanBuffer = ''
+        lastNodeKey:str
 
-        topLevelStorage:dict[str, LuaNode] = {}
-        #store nodes here for easy editing of nodes
-        nodeSubgroup:dict[str, LuaNode] = {}
-        otherSubgroup:dict[str, LuaNode] = {}
         #(indentation level for topLevel nodes are at 1 indentation,actual data for nodes starts at 2 indentation)
         indentationLevel = 2;
 
@@ -203,7 +228,7 @@ class TreeStorage:
             #Start scanning actual info(indentation level for topLevel nodes are at 1 indentation,)
             if topLevel_luaNodeLineNumber!=-1:#{
                 for lineChar in line:#{
-                    if topLevel_luaNodeName=='':#{
+                    if topLevel_luaNodeName=='':#{ (indentationLevel==1) at this point
                         if scanLevel=='' and lineChar=='[':
                             scanLevel = 'insideTopLevelNodeName'
                             scanBuffer = ''
@@ -212,9 +237,9 @@ class TreeStorage:
                             scanBuffer = ''
                             scanLevel = ''
                             if(line.contains(',')):
-                                topLevelStorage[topLevel_luaNodeName] = LuaNode(topLevel_luaNodeName, False)
+                                self.topLevelStorage[topLevel_luaNodeName] = LuaNode(topLevel_luaNodeName, False)
                             else:
-                                topLevelStorage[topLevel_luaNodeName] = LuaNode(topLevel_luaNodeName, True)
+                                self.topLevelStorage[topLevel_luaNodeName] = LuaNode(topLevel_luaNodeName, True)#["nodes"]= created at this point
                         elif scanLevel=='scanLevel':
                             scanBuffer += lineChar;
                     #}
@@ -225,33 +250,32 @@ class TreeStorage:
                                     scanLevel = '{'
                                 elif(lineChar=='}'):#Exiting topLevelNode (ignoring the comma that might be after)
                                     topLevel_luaNodeName = ''
-                                elif lineChar is not ' ':#start extracting node content
-                                   scanLevel = 'nodeContent'
-                                   scanBuffer = lineChar
                             elif scanLevel=='{' and lineChar=='[':
                                 scanLevel = '['
                             elif scanLevel=='[':
                                 if lineChar==']':
-                                    topLevelStorage[topLevel_luaNodeName].add_SubNodeFromTopLevel(scanBuffer)#Add node to Tree
-                                    scanLevel = 'nextOrContent'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
+                                    lastNodeKey = scanBuffer
                                     scanBuffer = ''
+                                    self.topLevelStorage[topLevel_luaNodeName].add_SubNodeFromTopLevel(lastNodeKey)#Add node to Tree (SkillNodeID created here)
+                                    scanLevel = 'nextOrContent'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
                                 else:
                                     scanBuffer+=lineChar
                             elif scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
                                 if lineChar=='{':
                                     indentationLevel = 3
-                                    nodeSubgroup[-1].hasSubNodes = True
+                                    self.nodeSubgroup[-1].hasSubNodes = True
                                     scanLevel = ''
-                                elif lineChar is not ' ':#start extracting node content
+                                elif lineChar is not ' ' and lineChar is not '=':#["points"]'s groups ["totalPoints"]= uses this
                                   scanLevel = 'nodeContent'
                                   scanBuffer = lineChar
-                            elif scanLevel=='nodeContent':#points group is only topLevelGroup that will reach this(only single nodes with content value)
+                            elif scanLevel=='nodeContent':
                                 if lineChar==',' or lineChar=='\n':
-                                    print('Placeholder')
-                        elif indentationLevel==3:#Scanning for things like ["name"] now (node added to subnodes once scanned)
-                            print('Placeholder')
-                        else:#recursivelyLoadNodeInput will likely be needed for this part
-                            print('Placeholder')
+                                    self.topLevelStorage[topLevel_luaNodeName].subnodes[lastNodeKey].nodeContent = scanBuffer
+                                else:
+                                    scanBuffer += lineChar;
+                        else:
+                            #At indentationLevel==3, scanning for things like ["name"] now (node added to subnodes once scanned)
+                            self.recursivelyLoadNodeInput(f,lineChar)
                     #}
             #}
         #}
