@@ -78,7 +78,7 @@ class TreeStorage:
         #top level nodes such as "nodes" and "max_x" initialized here (topLevelStorage['"nodes"'] to access skill node data)
         self.topLevelStorage = topLevelStorage
         if(fileData!={}):
-            self.generateNodeTree(fileData)
+            self.generateNodeTree()
     
     def get_name(self):
         return self.name
@@ -222,7 +222,7 @@ class TreeStorage:
             ++lineNumber;
             if(topLevel_luaNodeLineNumber==-1):#Add to root level before actual node info starts
             #{
-                if(line.contains('[')):#{
+                if '[' in line:#{
                     topLevel_luaNodeLineNumber = lineNumber;
                 #}
                 else:#{
