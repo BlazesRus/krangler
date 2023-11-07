@@ -38,22 +38,29 @@ class LuaSubNode:
         #Actual subnodes stored inside the parent LuaNode
         self.subnodes = subnodes
   
-  def get_name(self):
-    return self.name
+	def get_name(self):
+		return self.name
+		
+	def get_subNodeKey(self, name):
+		return self.topLevelKey+'_'+name
 
 class LuaNode:
-    def __init__(self, name:str, hasSubNodes:bool, originalLineNumber=-1, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}, recursiveSubNodes:dict[str, LuaSubNode]={}):
+    def __init__(self, name:str, hasSubNodes:bool, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}, recursiveSubNodes:dict[str, LuaSubNode]={}):
         self.name = name
         self.hasSubNodes = hasSubNodes
-        #orginalLineNumber for sending info when debugging
-        self.originalLineNumber = originalLineNumber
         self.nodeContent = nodeContent
+        #Node ID data stored at this level
         self.subnodes = subnodes
+		#["name"] and other fields stored here (access via self.subnodes[NodeId]
         self.recursiveSubNodes:dict[str, LuaSubNode] = recursiveSubNodes
     
     def get_name(self):
         return self.name
     
+    def get_childNode(self, subNodeName, childNodeName):
+        childKey:str = self.subnodes[subNodeName].get_subNodeKey(childNodeName)
+		self.recursiveSubNodes[childKey]
+	
     def add_SubNodeFromTopLevel(self, name:str, hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
         self.subnodes[name] = LuaSubNode(name, '', hasSubNodes, hasListInfo, nodeContent)
     
@@ -65,12 +72,11 @@ class LuaNode:
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(name, topLevelKey, SubNodes, hasListInfo, nodeContent)
     
 class TreeStorage:
-    def __init__(self, RootStart='', topLevelStorage:dict[str, LuaNode]={}, nodeSubgroup:dict[str, LuaNode]={}, otherSubgroup:dict[str, LuaNode]={}):
+    def __init__(self, RootStart='', topLevelStorage:dict[str, LuaNode]={}):
         #Lines starting from top of file until first top level node group start stored here
         self.RootStart = RootStart
+        #top level nodes such as "nodes" and "max_x" initialized here (topLevelStorage['"nodes"'] to access skill node data)
         self.topLevelStorage = topLevelStorage
-        self.nodeSubgroup = nodeSubgroup
-        self.otherSubgroup = otherSubgroup
     
     def get_name(self):
         return self.name
@@ -136,22 +142,13 @@ class TreeStorage:
                 f.write('    [\"')
                 f.write(topLevelNode.name)#outputs ["nodes"]= { at this level
                 f.write('\"]= ')
-                if(topLevelNode.hasSubNodes==False):
+				if skillTreeNode.hasListInfo:#["imageZoomLevels"] has information at this level
+					print('Placeholder')
+                elif topLevelNode.hasSubNodes==False:
                     f.write(topLevelNode.nodeContent)
                     f.write(',\n')
-                elif(topLevelNode.name=='nodes'):
-                    nodeWhitespace = 8
-                    for i, skillTreeNode in enumerate(self.nodeSubgroup):
-                    #{
-                        if i:#Every element but the first element in list
-                            f.write(',\n')
-                        f.write('        [')
-                        f.write(skillTreeNode.name)#[240]= { #skillTree ID is outputted at this level
-                        f.write('\"]= ')
-                        self.recursiveNodeOutput(f, self.nodeSubgroup, skillTreeNode)
-                    #}
-                else:
-                    for i, skillTreeNode in enumerate(self.nodeSubgroup):
+                else:#if(topLevelNode.hasSubNodes):
+                    for i, skillTreeNode in enumerate(self[topLevelNode].subnodes):
                     #{
                         if i:#Every element but the first element in list
                             f.write(',\n')
@@ -166,8 +163,10 @@ class TreeStorage:
                                 f.write(skillTreeNode.nodeContent)
                                 f.write('\n        },n')
                         #}
+						elif topLevelNode.hasSubNodes==False:
+							print('Placeholder')
                         else:
-                            self.recursiveNodeOutput(f, self.otherSubgroup, skillTreeNode)
+                            self.recursiveNodeOutput(f, self[topLevelNode].subnodes, skillTreeNode)
                     #}
             #}
             f.write(skillTreeNode.RootEnd)
@@ -182,7 +181,7 @@ class TreeStorage:
         lineNumber = -1
         scanLevel = ''
         scanBuffer = ''
-        #top level nodes such as "nodes" and "max_x" initialized here
+
         topLevelStorage:dict[str, LuaNode] = {}
         #store nodes here for easy editing of nodes
         nodeSubgroup:dict[str, LuaNode] = {}
@@ -219,24 +218,39 @@ class TreeStorage:
                         elif scanLevel=='scanLevel':
                             scanBuffer += lineChar;
                     #}
-                    elif topLevel_luaNodeName=='nodes'#{
+                    else#{
                         if indentationLevel==2:#Scanning for NodeId now (node added to subnodes once scanned)
                             if scanLevel=='':
                                 if lineChar=='{':
                                     scanLevel = '{'
                                 elif(lineChar=='}'):#Exiting topLevelNode (ignoring the comma that might be after)
                                     topLevel_luaNodeName = ''
+                                #elif lineChar is not ' ':#start extracting node content
+                                #	scanLevel = 'nodeContent'
+                                #	scanBuffer = lineChar
                             elif scanLevel=='{' and lineChar=='[':
                                 scanLevel = '['
                             elif scanLevel=='[':
                                 if lineChar==']':
-                                    nodeSubgroup.add_SubNodeFromTopLevel(scanBuffer)#Add node to Tree
-                                    scanLevel = 'content'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes). 
+                                    if topLevel_luaNodeName=='nodes'
+                                        nodeSubgroup.add_SubNodeFromTopLevel(scanBuffer)#Add node to Tree
+                                    else:
+                                        nodeSubgroup.add_SubNodeFromTopLevel(scanBuffer)#Add node to Tree
+                                    
+                                    scanLevel = 'nextOrContent'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes). 
                                     scanBuffer = ''
                                 else
                                     scanBuffer+=lineChar;
-                            else:#Searching for subnodes like ["name"] or in rare cases search for node content value 
-                                print('Placeholder');
+                            elif scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value 
+                                if lineChar=='{':
+                                    indentationLevel = 3
+                                    nodeSubgroup[-1].hasSubNodes = true
+                                    scanLevel = ''
+                                #elif lineChar is not ' ':#start extracting node content
+                                #	scanLevel = 'nodeContent'
+                                #	scanBuffer = lineChar
+                            #elif scanLevel=='nodeContent':#points group is only topLevelGroup that will reach this(only single nodes with content value)
+                            #	if lineChar==',' or lineChar=='\n':
                         elif indentationLevel==3)#Scanning for things like ["name"] now (node added to subnodes once scanned)
                             print('Placeholder');
                         else:#recursivelyLoadNodeInput will likely be needed for this part
