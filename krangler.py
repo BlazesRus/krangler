@@ -334,7 +334,7 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
         #Test NodeTree generation and reconstruction before creating new code for replacing nodes
         modified_tree.replace_nodes(original_tree, nodeReplacementInfo)
 
-        modified_tree.replace_nodes(original_tree, nodeReplacementInfo)
+        modified_tree.nullifyUnusedNodes(original_tree, nodeReplacementInfo)
     #}
     modified_tree.reconstructAndSave_Tree(outputDirectory)
 
