@@ -72,11 +72,13 @@ class LuaNode:
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(name, topLevelKey, SubNodes, hasListInfo, nodeContent)
     
 class TreeStorage:
-    def __init__(self, RootStart='', topLevelStorage:dict[str, LuaNode]={}):
+    def __init__(self, fileData:list[str]={}, RootStart='', topLevelStorage:dict[str, LuaNode]={}):
         #Lines starting from top of file until first top level node group start stored here
         self.RootStart = RootStart
         #top level nodes such as "nodes" and "max_x" initialized here (topLevelStorage['"nodes"'] to access skill node data)
         self.topLevelStorage = topLevelStorage
+        if(fileData!={}):
+            self.generateNodeTree(fileData)
     
     def get_name(self):
         return self.name
@@ -303,8 +305,7 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     all_jsons = glob.glob(basedir+'*.json')
     originalFileData = load_tree(inputDirectory)
     #Parsing lines into nodes instead
-    original_tree:TreeStorage
-    original_tree.generateNodeTree(originalFileData)
+    original_tree:TreeStorage = TreeStorage(originalFileData)
     modified_tree:TreeStorage = original_tree
     nodeReplacementInfo:dict[str, str]={}
     if len(all_jsons) < 1:
