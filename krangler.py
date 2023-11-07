@@ -25,11 +25,6 @@ ASCENDANCY_ERROR = [
     '            [\"ascendancyName\"] = \"None\",\n',
     '            [\"stats\"] = {},\n']
 
-def load_tree(outputDirectory, fname='tree.lua'):
-    fullPath = outputDirectory+fname
- #   print('Loading tree from '+fullPath+'. \n')
-    return open(outputDirectory+'/tree.lua','r').readlines()
-
 class LuaSubNode:
     def __init__(self, name:str, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
         #If name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)  
@@ -70,9 +65,8 @@ class LuaNode:
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(name, topLevelKey, SubNodes, hasListInfo, nodeContent)
     
 class TreeStorage:
-    def __init__(self, RootStart, RootEnd, topLevelStorage:dict[str, LuaNode], nodeSubgroup:dict[str, LuaNode], otherSubnodeStorage:dict[str, LuaNode]):
+    def __init__(self, RootStart='', topLevelStorage:dict[str, LuaNode]={}, nodeSubgroup:dict[str, LuaNode]={}, otherSubnodeStorage:dict[str, LuaNode]={}):
         self.RootStart = RootStart
-        self.RootEnd = RootEnd
         self.topLevelStorage = topLevelStorage
         self.nodeSubgroup = nodeSubgroup
         self.otherSubnodeStorage = otherSubnodeStorage
@@ -178,90 +172,81 @@ class TreeStorage:
             f.write(skillTreeNode.RootEnd)
             f.close();
 
-#Depreciated once finish parser code
-def save_tree(tree, outputDirectory, fname='tree.lua'):
-    fullPath = outputDirectory+fname
- #   print('Saving edited tree to '+fullPath+'. \n')
-    with open(fullPath,'w') as f:
-        for line in tree:
-            f.write(line)
+    def recursivelyLoadNodeInput(self, recursiveLevel=1):
+        print('Loading Data lua data deeper into scope--placeholder command')
+        
+    def generateNodeTree(self, fileData):
+        topLevel_luaNodeLineNumber = -1
+        topLevel_luaNodeName = ''
+        lineNumber = -1
+        scanLevel = ''
+        scanBuffer = ''
+        #Lines starting from top of file until first top level node group start stored here
+        RootStart = ''
+        #top level nodes such as "nodes" and "max_x" initialized here
+        topLevelStorage:dict[str, LuaNode] = {}
+        #store nodes here for easy editing of nodes
+        nodeSubgroup:dict[str, LuaNode] = {}
+        otherSubnodeStorage:dict[str, LuaNode] = {}
+        #(indentation level for topLevel nodes are at 1 indentation,actual data for nodes starts at 2 indentation)
+        indentationLevel = 2;
 
-def replace_all_nodes_wrapper(inputDirectory, outputDirectory):
-    original_tree = load_tree(inputDirectory)
-    modified_tree = original_tree
-    replace_all_nodes(modified_tree, original_tree, outputDirectory)
-
-def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./data/'):
-    all_jsons = glob.glob(basedir+'*.json')
-    #Parsing lines into nodes instead
-    topLevel_luaNodeLineNumber = -1
-    topLevel_luaNodeName = ''
-    lineNumber = -1
-    scanLevel = ''
-    scanBuffer = ''
-    #Lines starting from top of file until first top level node group start stored here
-    RootStart = ''
-    #Lines after last node group set here (should  result in value of '}')
-    RootEnd = ''
-    #top level nodes such as "nodes" and "max_x" initialized here
-    topLevelStorage:dict[str, LuaNode] = {}
-    #store nodes here for easy editing of nodes
-    nodeSubgroup:dict[str, LuaNode] = {}
-    otherSubnodeStorage:dict[str, LuaNode] = {}
-
-
-    for line in original_tree:#{
-        ++lineNumber;
-        if(topLevel_luaNodeLineNumber==-1):#Add to root level before actual node info starts
-        #{
-            if(line.contains('[')):#{
-                topLevel_luaNodeLineNumber = lineNumber;
-            #}
-            else:#{
-                RootStart += line;
-            #}
-        #}
-        #Start scanning actual info
-        if(topLevel_luaNodeLineNumber!=-1):#{
-            if(topLevel_luaNodeName==''):#{
-                for lineChar in line:#{
-                    if(scanLevel=='' and lineChar=='['):
-                        scanLevel = 'insideTopLevelNodeName'
-                        scanBuffer = '';
-                    elif lineChar==']':
-                        topLevel_luaNodeName = scanBuffer;
-                        scanBuffer = '';
-                        if(line.contains(',')):
-                            topLevelStorage[topLevel_luaNodeName] = topLevel_luaNodeName, False;
-                        else:
-                            topLevelStorage[topLevel_luaNodeName] = topLevel_luaNodeName, True;
-                    else:
-                        scanBuffer += lineChar;
-                #}
-            #}
-            elif(topLevel_luaNodeName=='nodes')#{
-                if(topLevelStorage[topLevel_luaNodeName].hasSubNodes):#{
-            
+        for line in fileData:#{
+            ++lineNumber;
+            if(topLevel_luaNodeLineNumber==-1):#Add to root level before actual node info starts
+            #{
+                if(line.contains('[')):#{
+                    topLevel_luaNodeLineNumber = lineNumber;
                 #}
                 else:#{
-                    for lineChar in line:
-                    #{
+                    RootStart += line;
+                #}
+            #}
+            #Start scanning actual info(indentation level for topLevel nodes are at 1 indentation,)
+            if(topLevel_luaNodeLineNumber!=-1):#{
+                for lineChar in line:#{
+                    if topLevel_luaNodeName=='':#{
+                        if scanLevel=='' and lineChar=='[':
+                            scanLevel = 'insideTopLevelNodeName'
+                            scanBuffer = '';
+                        elif lineChar==']':
+                            topLevel_luaNodeName = scanBuffer;
+                            scanBuffer = '';
+                            if(line.contains(',')):
+                                topLevelStorage[topLevel_luaNodeName] = topLevel_luaNodeName, False;
+                            else:
+                                topLevelStorage[topLevel_luaNodeName] = topLevel_luaNodeName, True;
+                        elif scanLevel=='scanLevel':
+                            scanBuffer += lineChar;
                     #}
-                #}
-            #}
-            elif(topLevelStorage[topLevel_luaNodeName].hasSubNodes):#{
-            
-            #}
-            else:#{
-                for lineChar in line:
-                #{
-                #}
+                    elif(topLevel_luaNodeName=='nodes')#{
+                        print('Placeholder for nodes level')
+                    #}
+                    else:
+                        print('Placeholder for non-nodes level')
+                    #}
             #}
         #}
-    #}
+        
+    def nullifyAllSkillTreeNodes(self, fileData):
+        print('Remove all stats and art from tree--placeholder command')
+
+def load_tree(outputDirectory, fname='tree.lua'):
+    fullPath = outputDirectory+fname
+ #   print('Loading tree from '+fullPath+'. \n')
+    return open(outputDirectory+'/tree.lua','r').readlines()
+
+def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
+    all_jsons = glob.glob(basedir+'*.json')
+    originalFileData = load_tree(inputDirectory)
+    #Parsing lines into nodes instead
+    original_tree:TreeStorage
+    original_tree.generateNodeTree(originalFileData)
+    modified_tree:TreeStorage = original_tree
     if len(all_jsons) < 1:
     #{
         print('No JSON files found in data directory...Converting all nodes into nothing instead \n')
+        modified_tree.nullifyAllSkillTreeNodes()
     #}
     else:
     #{
@@ -283,8 +268,7 @@ def replace_all_nodes(modified_tree, original_tree, outputDirectory, basedir='./
 
         for line in range(len(node_df)):
             #Sending information of node group passed to make sure don't replace any important nodes
-            replace_node(modified_tree, original_tree,
-            int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
+            #replace_node(modified_tree, original_tree, int(node_df.iloc[line]['original']), int(node_df.iloc[line]['new']))
     #}
     save_tree(modified_tree, outputDirectory)
 
@@ -307,18 +291,34 @@ def get_pob_dir():
     return POB_DIR
 
 def main():
-    POB_DIR = get_pob_dir()
-    OrigTree_DIR = POB_DIR
-    #detect if using Path of Building Source instead of using compiled code
-    if os.path.isdir("POB_DIR/src/"):
-        OrigTree_DIR = POB_DIR+'/src/TreeData/3_22/'
+    POBInstallLocation = get_pob_dir()
+    #Edit dataFolderInputOverride.txt file to override OrigTree_DIR default pathing
+    OrigTreeOverrideData = open("pob_location.txt", "r")
+    OrigTreeOverride = pob_location.readline().rstrip()
+    OrigTreeOverrideData.close()
+    OrigTree_DIR:str
+    POB_DIROverride:str
+    if OrigTreeOverride == "":
+        #detect if using Path of Building Source instead of using compiled code
+        if os.path.isdir("POB_DIR/src/"):
+            OrigTree_DIR = POBInstallLocation+'/src/TreeData/3_22/'
+        else:
+            OrigTree_DIR = POBInstallLocation+'/TreeData/3_22/'
     else:
-        OrigTree_DIR = POB_DIR+'/TreeData/3_22/'
-    if os.path.isdir("POB_DIR/src/"):
-        POB_DIR = POB_DIR+'/src/TreeData/Krangled3_22/'
+        OrigTree_DIR = OrigTreeOverride
+    #Edit dataFolderOutputOverride.txt file to override OrigTree_DIR default pathing
+    OrigTreeOverrideData = open("pob_location.txt", "r")
+    POB_DIROverride = pob_location.readline().rstrip()
+    OrigTreeOverrideData.close()
+    if POB_DIROverride == "":
+        if os.path.isdir("POB_DIR/src/"):
+            POBData_DIR = POBInstallLocation+'/src/TreeData/Krangled3_22/'
+        else:
+            POBData_DIR = POBInstallLocation+'/TreeData/Krangled3_22/'
     else:
-        POB_DIR = POB_DIR+'/TreeData/Krangled3_22/'
-    replace_all_nodes_wrapper(OrigTree_DIR, POB_DIR)
+        POBData_DIR = POB_DIROverride
+
+    replace_all_nodes(OrigTree_DIR, POBData_DIR)
     #Editing copied file instead of replacing file in directory
 
 if __name__ == "__main__":
