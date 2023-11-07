@@ -349,11 +349,11 @@ def get_pob_dir():
 def main():
     POBInstallLocation = get_pob_dir()
     #Edit dataFolderInputOverride.txt file to override OrigTree_DIR default pathing
-    OrigTreeOverrideData = open("pob_location.txt", "r")
-    OrigTreeOverride = OrigTreeOverrideData.readline().rstrip()
+    OrigTreeOverrideData = open("dataFolderInputOverride.txt", "r")
+    OrigTreeOverride:str = OrigTreeOverrideData.readline().rstrip()
     OrigTreeOverrideData.close()
     OrigTree_DIR:str
-    POB_DIROverride:str
+    KrangledData_DIR:str
     if OrigTreeOverride == "":
         #detect if using Path of Building Source instead of using compiled code
         if os.path.isdir("POB_DIR/src/"):
@@ -363,18 +363,18 @@ def main():
     else:
         OrigTree_DIR = OrigTreeOverride
     #Edit dataFolderOutputOverride.txt file to override OrigTree_DIR default pathing
-    OrigTreeOverrideData = open("pob_location.txt", "r")
-    POB_DIROverride = OrigTreeOverrideData.readline().rstrip()
+    OrigTreeOverrideData = open("dataFolderOutputOverride.txt", "r")
+    OutputOverride:str = OrigTreeOverrideData.readline().rstrip()
     OrigTreeOverrideData.close()
-    if POB_DIROverride == "":
+    if OutputOverride == "":
         if os.path.isdir("POB_DIR/src/"):
-            POBData_DIR = POBInstallLocation+'/src/TreeData/Krangled3_22/'
+            KrangledData_DIR = POBInstallLocation+str('/src/TreeData/Krangled3_22/')
         else:
-            POBData_DIR = POBInstallLocation+'/TreeData/Krangled3_22/'
+            KrangledData_DIR = POBInstallLocation+str('/TreeData/Krangled3_22/')
     else:
-        POBData_DIR = POB_DIROverride
+        KrangledData_DIR = OutputOverride
 
-    replace_all_nodes(OrigTree_DIR, POBData_DIR)
+    replace_all_nodes(OrigTree_DIR, KrangledData_DIR)
     #Editing copied file instead of replacing file in directory
 
 if __name__ == "__main__":
