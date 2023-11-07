@@ -195,7 +195,7 @@ class TreeStorage:
                 self.nodeSubgroup[-1].hasSubNodes = True
                 scanLevel = ''
                 scanLevel, topLevel_luaNodeName, scanBuffer, indentationLevel = self.recursivelyLoadNodeInput(lineChar, scanLevel, topLevel_luaNodeName, scanBuffer, lastNodeKey, indentationLevel)
-            elif lineChar is not ' ' and lineChar is not '=':#["points"]'s groups ["totalPoints"]= uses this
+            elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
                 scanLevel = 'nodeContent'
                 scanBuffer = lineChar
         elif scanLevel=='nodeContent':
@@ -267,7 +267,7 @@ class TreeStorage:
                                     indentationLevel = 3
                                     self.nodeSubgroup[-1].hasSubNodes = True
                                     scanLevel = ''
-                                elif lineChar is not ' ' and lineChar is not '=':#["points"]'s groups ["totalPoints"]= uses this
+                                elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
                                   scanLevel = 'nodeContent'
                                   scanBuffer = lineChar
                             elif scanLevel=='nodeContent':
@@ -313,9 +313,7 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
         node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
         #print('dropping duplicates \n')
         node_df = node_df.drop_duplicates()
-        #print('removing duplicated nothingness \n')
         nothingness_dupes = node_df[node_df['original'].duplicated(keep=False)]
-        #print('indexing duplicated nothingness \n')
         node_df = node_df.drop(nothingness_dupes[nothingness_dupes['new']==-1].index)
 
         if any(node_df['original'].duplicated()):
@@ -334,25 +332,25 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
 
 def get_pob_dir():
     # open the text file for reading and read the first line of the file, which contains the directory path
-    POB_DIR = ""
+    POBInstallLocation = ""
     pob_location = open("pob_location.txt", "r")
-    POB_DIR = pob_location.readline().rstrip()
+    POBInstallLocation = pob_location.readline().rstrip()
     pob_location.close()
 
     # check if the file is empty, and get directory from user input if it is empty
-    if POB_DIR == "":
-        POB_DIR = input("Please enter the directory where your Path of Building is located: ")
+    if POBInstallLocation == "":
+        POBInstallLocation = input("Please enter the directory where your Path of Building(root folder;not the data folder) is located: ")
         file = open("pob_location.txt", "w")
-        file.write(POB_DIR)
+        file.write(POBInstallLocation)
         file.close()
 
-    return POB_DIR
+    return POBInstallLocation
 
 def main():
     POBInstallLocation = get_pob_dir()
     #Edit dataFolderInputOverride.txt file to override OrigTree_DIR default pathing
     OrigTreeOverrideData = open("pob_location.txt", "r")
-    OrigTreeOverride = pob_location.readline().rstrip()
+    OrigTreeOverride = OrigTreeOverrideData.readline().rstrip()
     OrigTreeOverrideData.close()
     OrigTree_DIR:str
     POB_DIROverride:str
@@ -366,7 +364,7 @@ def main():
         OrigTree_DIR = OrigTreeOverride
     #Edit dataFolderOutputOverride.txt file to override OrigTree_DIR default pathing
     OrigTreeOverrideData = open("pob_location.txt", "r")
-    POB_DIROverride = pob_location.readline().rstrip()
+    POB_DIROverride = OrigTreeOverrideData.readline().rstrip()
     OrigTreeOverrideData.close()
     if POB_DIROverride == "":
         if os.path.isdir("POB_DIR/src/"):
