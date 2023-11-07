@@ -32,7 +32,8 @@ def load_tree(outputDirectory, fname='tree.lua'):
 
 class LuaSubNode:
     def __init__(self, name:str, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
-        #if name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)
+        #If name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)  
+        #   use name[1,-1] to extract information about index
         self.name = name
         #Keynames based on (parent's topLevelKey or subnode's name if parent is in subnodes)+_+name (can't use lists as key so using string instead)
         self.topLevelKey = topLevelKey
@@ -83,6 +84,7 @@ class TreeStorage:
         # # Left Padding of the string(based on https://www.geeksforgeeks.org/fill-a-python-string-with-spaces/)
         # whitespacePaddedOutput = ('{: >recursiveLevel*4}'.format(string))
         # print(f'\"{whitespacePaddedOutput}\"')
+        # alternatives can use '    '*recursiveLevel
         whitespacePaddedOutput:str
         if(parentNode.hasListInfo):
             if(parentNode.nodeContent==''):
