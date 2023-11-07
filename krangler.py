@@ -38,11 +38,11 @@ class LuaSubNode:
         #Actual subnodes stored inside the parent LuaNode
         self.subnodes = subnodes
   
-	def get_name(self):
-		return self.name
-		
-	def get_subNodeKey(self, name):
-		return self.topLevelKey+'_'+name
+    def get_name(self):
+        return self.name
+        
+    def get_subNodeKey(self, name):
+        return self.topLevelKey+'_'+name
 
 class LuaNode:
     def __init__(self, name:str, hasSubNodes:bool, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}, recursiveSubNodes:dict[str, LuaSubNode]={}):
@@ -51,7 +51,7 @@ class LuaNode:
         self.nodeContent = nodeContent
         #Node ID data stored at this level
         self.subnodes = subnodes
-		#["name"] and other fields stored here (access via self.subnodes[NodeId]
+        #["name"] and other fields stored here (access via self.subnodes[NodeId]
         self.recursiveSubNodes:dict[str, LuaSubNode] = recursiveSubNodes
     
     def get_name(self):
@@ -59,8 +59,8 @@ class LuaNode:
     
     def get_childNode(self, subNodeName, childNodeName):
         childKey:str = self.subnodes[subNodeName].get_subNodeKey(childNodeName)
-		self.recursiveSubNodes[childKey]
-	
+        self.recursiveSubNodes[childKey]
+    
     def add_SubNodeFromTopLevel(self, name:str, hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
         self.subnodes[name] = LuaSubNode(name, '', hasSubNodes, hasListInfo, nodeContent)
     
@@ -142,8 +142,8 @@ class TreeStorage:
                 f.write('    [\"')
                 f.write(topLevelNode.name)#outputs ["nodes"]= { at this level
                 f.write('\"]= ')
-				if skillTreeNode.hasListInfo:#["imageZoomLevels"] has information at this level
-					print('Placeholder')
+                if skillTreeNode.hasListInfo:#["imageZoomLevels"] has information at this level
+                    print('Placeholder')
                 elif topLevelNode.hasSubNodes==False:
                     f.write(topLevelNode.nodeContent)
                     f.write(',\n')
@@ -163,8 +163,8 @@ class TreeStorage:
                                 f.write(skillTreeNode.nodeContent)
                                 f.write('\n        },n')
                         #}
-						elif topLevelNode.hasSubNodes==False:
-							print('Placeholder')
+                        elif topLevelNode.hasSubNodes==False:
+                            print('Placeholder')
                         else:
                             self.recursiveNodeOutput(f, self[topLevelNode].subnodes, skillTreeNode)
                     #}
