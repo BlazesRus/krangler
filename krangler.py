@@ -26,17 +26,20 @@ ASCENDANCY_ERROR = [
     '            [\"stats\"] = {},\n']
 
 class LuaSubNode:
-    def __init__(self, name:str, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
+    def __init__(self, parentKey:str, name:str='', nodeLevel:int=2, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
         #If name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)  
         #   use name[1,-1] to extract information about index
         self.name = name
-        #Keynames based on (parent's topLevelKey or subnode's name if parent is in subnodes)+_+name (can't use lists as key so using string instead)
+        #Keynames based on (parent's topLevelKey or subnode's name if parent is in LuaNode)+_+name (can't use lists as key so using string instead)
         self.topLevelKey = topLevelKey
         self.hasSubNodes = hasSubNodes
         self.hasListInfo = hasListInfo
         self.nodeContent = nodeContent
-        #Actual subnodes stored inside the parent LuaNode
+        #Actual subnodes stored inside the parent LuaNode (key refers to topLevelKey)
         self.subnodes = subnodes
+        #if nodeLevel == 2, then parent is one of LuaNodes (iteration level is equal to this)
+        self.nodeLevel = nodeLevel
+        self.parentKey = parentKey
   
     def get_name(self):
         return self.name
@@ -49,7 +52,8 @@ class LuaNode:
         self.name = name
         self.hasSubNodes = hasSubNodes
         self.nodeContent = nodeContent
-        #Node ID data stored at this level
+        #Node ID data stored at this level (the first subnodes are added here, rest get added to recursiveSubNodes)
+        #  keys for these refer to the name of the subnode, with the actual values refering to the subnode
         self.subnodes = subnodes
         #["name"] and other fields stored here (access via self.subnodes[NodeId]
         self.recursiveSubNodes:dict[str, LuaSubNode] = recursiveSubNodes
@@ -61,15 +65,39 @@ class LuaNode:
         childKey:str = self.subnodes[subNodeName].get_subNodeKey(childNodeName)
         self.recursiveSubNodes[childKey]
     
-    def add_SubNodeFromTopLevel(self, name:str, hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
-        self.subnodes[name] = LuaSubNode(name, '', hasSubNodes, hasListInfo, nodeContent)
+    def add_SubNodeFromTopLevel(self, parentKey:str, name:str='', topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
+        topLevelKey:str = parentKey+'_'+name
+        self.subnodes[topLevelKey] = LuaSubNode(parentKey, name, 2, topLevelKey, hasSubNodes, hasListInfo, nodeContent)
     
     
-    def add_SubNodeToSubnode(self, name:str, parentKey:str, SubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
+    def add_SubNodeToSubnode(self, name:str, parentSubnode:LuaSubNode, SubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
     #if size is one, then parent key is stored inside subnodes
         #parentKey+_+name
-        topLevelKey:str = parentKey+'_'+name
-        self.recursiveSubNodes[topLevelKey] = LuaSubNode(name, topLevelKey, SubNodes, hasListInfo, nodeContent)
+        topLevelKey:str = parentSubnode.topLevelKey+'_'+name
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, name, parentSubnode.nodeLevel+1, topLevelKey, SubNodes, hasListInfo, nodeContent)
+        #Making sure subnode gets child added
+        parentSubnode.subnodes[topLevelKey] = name
+        #return parentSubnode
+        
+    # '"isMastery"' in nodeData.subnodes:
+    def isMasteryNode(self, skillNode:LuaSubNode):
+        return '"isMastery"' in skillNode.subnodes.values
+    
+    #'"ascendancyName"' in nodeData.subnodes:
+    def isAscendancyNode(self, skillNode:LuaSubNode):
+        return self.name
+    
+    def isNotableNode(self, skillNode:LuaSubNode):
+        # '"isNotable"' in nodeData.subnodes:
+        return self.name
+
+    def isJewelSocket(self, skillNode:LuaSubNode):
+        # '"isJewelSocket"' in nodeData.subnodes:
+        return self.name
+    
+    def isNotJewelSocket(self, skillNode:LuaSubNode):
+        # '"isJewelSocket"' not in nodeData.subnodes.:
+        return self.name
     
 class TreeStorage:
     nodesGroup:str = '\"nodes\"'
@@ -175,8 +203,7 @@ class TreeStorage:
             f.write(skillTreeNode.RootEnd)
             f.close();
 
-    def recursivelyLoadNodeInput(self, lineChar, scanLevel, current_topLevelNode, scanBuffer, lastNodeKey, indentationLevel=3):
-        currentNodeKey:str = lastNodeKey
+    def recursivelyLoadNodeInput(self, lineChar, scanLevel, current_topLevelNode, scanBuffer, currentNodeKeyPosition:list[str], indentationLevel=3):
         if scanLevel=='':
             if lineChar=='{':
                 scanLevel = '{'
@@ -186,9 +213,9 @@ class TreeStorage:
             scanLevel = '['
         elif scanLevel=='[':
             if lineChar==']':
-                currentNodeKey = scanBuffer
+                currentNodeKeyPosition.append(scanBuffer)
+                self.topLevel[current_topLevelNode].add_SubNodeToSubnode(scanBuffer, self.topLevel[current_topLevelNode].recursiveSubNodes[currentNodeKeyPosition[-2]])#Add node to Tree
                 scanBuffer = ''
-                self.topLevel[current_topLevelNode].add_SubNodeToSubnode(lastNodeKey)#Add node to Tree
                 scanLevel = 'nextOrContent'#Search for either node content or subnodes
             else:
                 scanBuffer+=lineChar
@@ -197,16 +224,16 @@ class TreeStorage:
                 indentationLevel += 1
                 self.nodeSubgroup[-1].hasSubNodes = True
                 scanLevel = ''
-                scanLevel, current_topLevelNode, scanBuffer, indentationLevel = self.recursivelyLoadNodeInput(lineChar, scanLevel, current_topLevelNode, scanBuffer, lastNodeKey, indentationLevel)
+                scanLevel, scanBuffer, indentationLevel = self.recursivelyLoadNodeInput(lineChar, scanLevel, current_topLevelNode, scanBuffer, currentNodeKeyPosition[-2], indentationLevel)
             elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
                 scanLevel = 'nodeContent'
                 scanBuffer = lineChar
         elif scanLevel=='nodeContent':
             if lineChar==',' or lineChar=='\n':
-                self.topLevel[current_topLevelNode].subnodes[currentNodeKey].nodeContent = scanBuffer
+                self.topLevel[current_topLevelNode].recursiveSubNodes[currentNodeKeyPosition[-1]].nodeContent = scanBuffer
             else:
                 scanBuffer += lineChar;
-        return scanLevel, current_topLevelNode#making sure to pass values back to main function
+        return scanLevel, scanBuffer, indentationLevel#making sure to pass values back to main function
 
     def generateNodeTree(self, fileData:list[str]):
         topLevel_luaNodeLineNumber = -1
@@ -215,6 +242,8 @@ class TreeStorage:
         scanLevel = ''
         scanBuffer = ''
         lastNodeKey:str
+        #Can be passed as reference unlike string information and keeps better track of node position
+        currentNodeKeyPosition:list[str]
 
         #(indentation level for topLevel nodes are at 1 indentation,actual data for nodes starts at 2 indentation)
         indentationLevel = 2;
@@ -255,13 +284,21 @@ class TreeStorage:
                                     scanLevel = '{'
                                 elif(lineChar=='}'):#Exiting topLevelNode (ignoring the comma that might be after)
                                     current_topLevelNode = ''
+                            #classes subgroup has {} as subgroups for class information such as for ascendancies
+                            elif scanLevel=='{' and lineChar=='{':
+                                scanLevel = 'classinfo'
+                                lastNodeKey = '{'+str(len(self.topLevel[current_topLevelNode].subnodes))
+                                currentNodeKeyPosition.append(lastNodeKey)
+                                self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(current_topLevelNode,lastNodeKey)
+                            elif scanLevel=='classinfo' and lineChar=='[':
+                                indentationLevel = 3
                             elif scanLevel=='{' and lineChar=='[':
                                 scanLevel = '['
                             elif scanLevel=='[':
                                 if lineChar==']':
                                     lastNodeKey = scanBuffer
                                     scanBuffer = ''
-                                    self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(lastNodeKey)#Add node to Tree (SkillNodeID created here)
+                                    self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(current_topLevelNode, lastNodeKey)#Add node to Tree (SkillNodeID created here)
                                     scanLevel = 'nextOrContent'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
                                 else:
                                     scanBuffer+=lineChar
@@ -271,8 +308,8 @@ class TreeStorage:
                                     self.nodeSubgroup[-1].hasSubNodes = True
                                     scanLevel = ''
                                 elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
-                                  scanLevel = 'nodeContent'
-                                  scanBuffer = lineChar
+                                    scanLevel = 'nodeContent'
+                                    scanBuffer = lineChar
                             elif scanLevel=='nodeContent':
                                 if lineChar==',' or lineChar=='\n':
                                     self.topLevel[current_topLevelNode].subnodes[lastNodeKey].nodeContent = scanBuffer
@@ -280,7 +317,7 @@ class TreeStorage:
                                     scanBuffer += lineChar;
                         else:
                             #At indentationLevel==3, scanning for things like ["name"] now (node added to subnodes once scanned)
-                            scanLevel, current_topLevelNode, scanBuffer, indentationLevel  = self.recursivelyLoadNodeInput(lineChar, scanLevel, current_topLevelNode, scanBuffer, lastNodeKey)
+                            scanLevel, current_topLevelNode, scanBuffer, indentationLevel  = self.recursivelyLoadNodeInput(lineChar, scanLevel, current_topLevelNode, scanBuffer, currentNodeKeyPosition)
                     #}
             #}
         #}
@@ -302,18 +339,18 @@ class TreeStorage:
 
     def nullifyAllSkillTreeNodes(self):
         if TreeStorage.nodesGroup in self.topLevel:
-            for nodeKey in self.topLevel[TreeStorage.nodesGroup]:
-                if '"isNotable"' in self.topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+            for nodeKey, nodeData in self.topLevel[TreeStorage.nodesGroup].items():
+                if '"isNotable"' in nodeData.subnodes:
                     print('Nullifying notable node with id '+nodeKey+'.\n')
                     self.nullify_notable_node(nodeKey)
-                elif '"isMastery"' in self.topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif '"isMastery"' in nodeData.subnodes:
                     print('Nullifying mastery node with id '+nodeKey+'.\n')
                     self.nullify_mastery_node(nodeKey)
-                elif '"ascendancyName"' in self.topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif '"ascendancyName"' in nodeData.subnodes:
                     print('Nullifying ascendancy node with id '+nodeKey+'.\n')
                     self.nullify_ascendancy_node(nodeKey)
                 #Make sure to skip jewel nodes
-                elif '\"isJewelSocket\"' not in self.topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif self.topLevel.isNotJewelSocket(nodeData):
                     print('Nullifying node with id '+nodeKey+'.\n')
                     self.nullify_normal_node(nodeKey)
         else:
@@ -321,20 +358,19 @@ class TreeStorage:
 
     def printDebugInfo(self):
         print("Listing top level nodes and information about each skill node detected")
-        for topLevelGroup in self.topLevel:
-            print('Detected '+topLevelGroup.key+" with name of "+topLevelGroup.name+'.\n')
-            if topLevelGroup.name==TreeStorage.nodesGroup:
-                for nodeKey in self.topLevel[TreeStorage.nodesGroup]:
-                    if '"isNotable"' in topLevelGroup.subnodes:
-                        print('Notable node with id '+nodeKey+' is stored.\n')
-                    elif '"isMastery"' in topLevelGroup.subnodes:
-                        print('Nullifying mastery node with id '+nodeKey+' is stored.\n')
-                    elif '"ascendancyName"' in topLevelGroup.subnodes:
-                        print('Ascendancy node with id '+nodeKey+' is stored.\n')
-                    elif '"isJewelSocket"' in topLevelGroup.subnodes[nodeKey].subnodes:
-                        print('Jewel node with id '+nodeKey+' is stored.\n')
-                    else:
-                        print('Normal node with id '+nodeKey+' is stored.\n')
+        for nodeKey, nodeData in self.topLevel[TreeStorage.nodesGroup].items():
+            print('Detected '+nodeKey+" with name of "+nodeData.name+'.\n')
+            if nodeKey==TreeStorage.nodesGroup:
+                if '"isNotable"' in nodeData.subnodes:
+                    print('Notable node with id '+nodeKey+' is stored.\n')
+                elif '"isMastery"' in nodeData.subnodes:
+                    print('Nullifying mastery node with id '+nodeKey+' is stored.\n')
+                elif '"ascendancyName"' in nodeData.subnodes:
+                    print('Ascendancy node with id '+nodeKey+' is stored.\n')
+                elif '"isJewelSocket"' in nodeData.subnodes:
+                    print('Jewel node with id '+nodeKey+' is stored.\n')
+                else:
+                    print('Normal node with id '+nodeKey+' is stored.\n')
         
     def replace_node(self, original_topLevel:dict[str, LuaNode], node_id:str, replace_id:str):
         print('Placeholder')
@@ -359,7 +395,7 @@ class TreeStorage:
                     print('Nullifying ascendancy node with id '+nodeKey+'.\n')
                     self.nullify_ascendancy_node(nodeKey)
                 #Make sure to skip jewel nodes
-                elif '\"isJewelSocket\"' not in original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif self.topLevel.isJewelSocket(original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey]):# elif '\"isJewelSocket\"' not in original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
                     print('Nullifying node with id '+nodeKey+'.\n')
                     self.nullify_normal_node(nodeKey)
         else:
