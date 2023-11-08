@@ -300,19 +300,22 @@ class TreeStorage:
         print('Placeholder')
 
     def nullifyAllSkillTreeNodes(self, fileData):
-        for nodeKey in self.treeTopLevel[TreeStorage.nodesGroup]:
-            if '"isNotable"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                print('Nullifying notable node with id '+nodeKey)
-                self.nullify_notable_node(nodeKey)
-            elif '"isMastery"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                print('Nullifying mastery node with id '+nodeKey)
-                self.nullify_mastery_node(nodeKey)
-            elif '"ascendancyName"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                print('Nullifying ascendancy node with id '+nodeKey)
-                self.nullify_ascendancy_node(nodeKey)
-            else:
-                print('Nullifying node with id '+nodeKey)
-                self.nullify_normal_node(nodeKey)
+        if TreeStorage.nodesGroup in original_treeTopLevel:
+            for nodeKey in self.treeTopLevel[TreeStorage.nodesGroup]:
+                if '"isNotable"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying notable node with id '+nodeKey)
+                    self.nullify_notable_node(nodeKey)
+                elif '"isMastery"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying mastery node with id '+nodeKey)
+                    self.nullify_mastery_node(nodeKey)
+                elif '"ascendancyName"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying ascendancy node with id '+nodeKey)
+                    self.nullify_ascendancy_node(nodeKey)
+                else:
+                    print('Nullifying node with id '+nodeKey)
+                    self.nullify_normal_node(nodeKey)
+        else:
+            print('Error:Nodes group doesn\'t exist inside file')
         
     def replace_node(self, original_treeTopLevel:dict[str, LuaNode], node_id:str, replace_id:str):
         print('Placeholder')
@@ -323,22 +326,24 @@ class TreeStorage:
     def nullifyUnusedNodes(self, original_treeTopLevel:dict[str, LuaNode], nodeReplacementInfo:dict[str, str]):
         #Returning those keys not replaced on list based on https://stackoverflow.com/questions/35713093/how-can-i-compare-two-lists-in-python-and-return-not-matches
         #For those inside original_tree.topLevelStorage[TreeStorage.nodesGroup].subnodes.keys() but not inside nodeReplacementInfo
-        print(TreeStorage.nodesGroup)
-        skillTreeNodes:list[str] = original_treeTopLevel[TreeStorage.nodesGroup]..keys()
-        nonReplacedNodeIds:list[str] = [x for x in skillTreeNodes if x not in nodeReplacementInfo]
-        for nodeKey in nonReplacedNodeIds:
-            if '"isNotable"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                print('Nullifying notable node with id '+nodeKey)
-                self.nullify_notable_node(nodeKey)
-            elif '"isMastery"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                print('Nullifying mastery node with id '+nodeKey)
-                self.nullify_mastery_node(nodeKey)
-            elif '"ascendancyName"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                print('Nullifying ascendancy node with id '+nodeKey)
-                self.nullify_ascendancy_node(nodeKey)
-            else:
-                print('Nullifying node with id '+nodeKey)
-                self.nullify_normal_node(nodeKey)
+        if TreeStorage.nodesGroup in original_treeTopLevel:
+            skillTreeNodes = original_treeTopLevel[TreeStorage.nodesGroup]
+            nonReplacedNodeIds:list[str] = [x for x in skillTreeNodes.subnodes.keys() if x not in nodeReplacementInfo]
+            for nodeKey in nonReplacedNodeIds:
+                if '"isNotable"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying notable node with id '+nodeKey)
+                    self.nullify_notable_node(nodeKey)
+                elif '"isMastery"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying mastery node with id '+nodeKey)
+                    self.nullify_mastery_node(nodeKey)
+                elif '"ascendancyName"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying ascendancy node with id '+nodeKey)
+                    self.nullify_ascendancy_node(nodeKey)
+                else:
+                    print('Nullifying node with id '+nodeKey)
+                    self.nullify_normal_node(nodeKey)
+        else:
+            print('Error:Nodes group doesn\'t exist inside file')
         
 def load_tree(outputDirectory, fname='tree.lua'):
     fullPath = outputDirectory+fname
