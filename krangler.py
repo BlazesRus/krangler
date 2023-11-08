@@ -1,4 +1,5 @@
 from io import TextIOWrapper
+import time
 from tkinter import INSIDE
 import pandas as pd
 import numpy as np
@@ -85,19 +86,19 @@ class LuaNode:
     
     #'"ascendancyName"' in nodeData.subnodes:
     def isAscendancyNode(self, skillNode:LuaSubNode):
-        return self.name
+        return '"ascendancyName"' in skillNode.subnodes.values
     
     def isNotableNode(self, skillNode:LuaSubNode):
         # '"isNotable"' in nodeData.subnodes:
-        return self.name
+        return '"isNotable"' in skillNode.subnodes.values
 
     def isJewelSocket(self, skillNode:LuaSubNode):
         # '"isJewelSocket"' in nodeData.subnodes:
-        return self.name
+        return '"isJewelSocket"' in skillNode.subnodes.values
     
     def isNotJewelSocket(self, skillNode:LuaSubNode):
         # '"isJewelSocket"' not in nodeData.subnodes.:
-        return self.name
+        return '"isJewelSocket"' not in skillNode.subnodes.values
     
 class TreeStorage:
     nodesGroup:str = '\"nodes\"'
@@ -358,29 +359,33 @@ class TreeStorage:
 
     def printDebugInfo(self):
         print("Listing top level nodes and information about each skill node detected")
-        for nodeKey, nodeData in self.topLevel[TreeStorage.nodesGroup].items():
-            print('Detected '+nodeKey+" with name of "+nodeData.name+'.\n')
-            if nodeKey==TreeStorage.nodesGroup:
-                isPossibleNormalNode:bool = True
-                for subData in nodeData.subnodes.values:
-                    if subData=='"isNotable"':
-                        print('Notable node with id '+nodeKey+' is stored.\n')
-                        isPossibleNormalNode = False
-                        break
-                    elif subData=='"isMastery"':
-                        print('Nullifying mastery node with id '+nodeKey+' is stored.\n')
-                        isPossibleNormalNode = False
-                        break
-                    elif subData=='"ascendancyName"':
-                        print('Ascendancy node with id '+nodeKey+' is stored.\n')
-                        isPossibleNormalNode = False
-                        break
-                    elif subData=='\"isJewelSocket\"':
-                        print('Jewel node with id '+nodeKey+' is stored.\n')
-                        isPossibleNormalNode = False
-                        break
-                if(isPossibleNormalNode):
-                    print('Normal node with id '+nodeKey+' is stored.\n')
+        for topLevelNodeKey, topLevelNodeData in self.topLevel.items():
+            print('Detected node group '+topLevelNodeKey+" with name of "+topLevelNodeData.name+'.\n')
+            print(" has "+str(len(topLevelNodeData.subnodes))+' subnodes with those subnodes having a total of '+str(len(topLevelNodeData.recursiveSubNodes))+'.\n')
+            for nodeKey, nodeData in topLevelNodeData.subnodes.items():
+                print('Detected subnode '+nodeKey+" with name of "+nodeData.name+'.\n')
+                print(" has "+str(len(nodeData.subnodes))+' subnodes.\n')
+                if nodeKey==TreeStorage.nodesGroup:
+                    isPossibleNormalNode:bool = True
+                    for subData in nodeData.subnodes.values:
+                        if subData=='"isNotable"':
+                            print('Notable node with id '+nodeKey+' is stored.\n')
+                            isPossibleNormalNode = False
+                            break
+                        elif subData=='"isMastery"':
+                            print('Nullifying mastery node with id '+nodeKey+' is stored.\n')
+                            isPossibleNormalNode = False
+                            break
+                        elif subData=='"ascendancyName"':
+                            print('Ascendancy node with id '+nodeKey+' is stored.\n')
+                            isPossibleNormalNode = False
+                            break
+                        elif subData=='\"isJewelSocket\"':
+                            print('Jewel node with id '+nodeKey+' is stored.\n')
+                            isPossibleNormalNode = False
+                            break
+                    if(isPossibleNormalNode):
+                        print('Normal node with id '+nodeKey+' is stored.\n')
         
     def replace_node(self, original_topLevel:dict[str, LuaNode], node_id:str, replace_id:str):
         print('Placeholder')
@@ -421,10 +426,9 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     originalFileData = load_tree(inputDirectory)
     #Parsing lines into nodes instead
     original_tree:TreeStorage = TreeStorage(originalFileData)
+    original_tree.printDebugInfo()
     modified_tree:TreeStorage = original_tree
     nodeReplacementInfo:dict[str, str]={}
-
-    original_tree.printDebugInfo()
 
     if len(all_jsons) < 1:
     #{
