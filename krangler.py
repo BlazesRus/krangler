@@ -72,13 +72,14 @@ class LuaNode:
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(name, topLevelKey, SubNodes, hasListInfo, nodeContent)
     
 class TreeStorage:
+    nodesGroup:str = '\"nodes\"'
     def __init__(self, fileData:list[str]={}, RootStart='', topLevelStorage:dict[str, LuaNode]={}):
         #Lines starting from top of file until first top level node group start stored here
         self.RootStart = RootStart
-        #top level nodes such as "nodes" and "max_x" initialized here (topLevelStorage['"nodes"'] to access skill node data)
+        #top level nodes such as "nodes" and "max_x" initialized here (topLevelStorage[TreeStorage.nodesGroup] to access skill node data)
         self.topLevelStorage = topLevelStorage
         if(fileData!={}):
-            self.generateNodeTree()
+            self.generateNodeTree(fileData)
     
     def get_name(self):
         return self.name
@@ -226,7 +227,7 @@ class TreeStorage:
                     topLevel_luaNodeLineNumber = lineNumber;
                 #}
                 else:#{
-                    RootStart += line;
+                    self.RootStart += line;
                 #}
             #}
             #Start scanning actual info(indentation level for topLevel nodes are at 1 indentation,)
@@ -283,18 +284,61 @@ class TreeStorage:
                     #}
             #}
         #}
+
+    def nullify_mastery_node(self, nodeKeyID:str):
+        #Label nodes as Unknown Mastery and give every possible mastery effect or turn into normal nullified node(mastery nodes crash client if have no effects)
+        print('Placeholder')
+
+    def nullify_ascendancy_node(self, nodeKeyID:str):
+        print('Placeholder')
         
+    def nullify_notable_node(self, nodeKeyID:str):
+        #same as nullify_normal_node except give a different image
+        print('Placeholder')
+
+    def nullify_normal_node(self, nodeKeyID:str):
+        print('Placeholder')
+
     def nullifyAllSkillTreeNodes(self, fileData):
-        print('Remove all stats and art from tree--placeholder command')
+        for nodeKey in self.treeTopLevel[TreeStorage.nodesGroup]:
+            if '"isNotable"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                print('Nullifying notable node with id '+nodeKey)
+                self.nullify_notable_node(nodeKey)
+            elif '"isMastery"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                print('Nullifying mastery node with id '+nodeKey)
+                self.nullify_mastery_node(nodeKey)
+            elif '"ascendancyName"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                print('Nullifying ascendancy node with id '+nodeKey)
+                self.nullify_ascendancy_node(nodeKey)
+            else:
+                print('Nullifying node with id '+nodeKey)
+                self.nullify_normal_node(nodeKey)
         
-    def replace_node(original_tree, node_id:str, replace_id:str):
+    def replace_node(self, original_treeTopLevel:dict[str, LuaNode], node_id:str, replace_id:str):
         print('Placeholder')
 
-    def replace_nodes(original_tree, nodeReplacementInfo:dict[str, str]):
+    def replace_nodes(self, original_treeTopLevel:dict[str, LuaNode], nodeReplacementInfo:dict[str, str]):
         print('Placeholder')
 
-    def nullifyUnusedNodes(original_tree, nodeReplacementInfo:dict[str, str]):
-        print('Placeholder')
+    def nullifyUnusedNodes(self, original_treeTopLevel:dict[str, LuaNode], nodeReplacementInfo:dict[str, str]):
+        #Returning those keys not replaced on list based on https://stackoverflow.com/questions/35713093/how-can-i-compare-two-lists-in-python-and-return-not-matches
+        #For those inside original_tree.topLevelStorage[TreeStorage.nodesGroup].subnodes.keys() but not inside nodeReplacementInfo
+        print(TreeStorage.nodesGroup)
+        skillTreeNodes:list[str] = original_treeTopLevel[TreeStorage.nodesGroup]..keys()
+        nonReplacedNodeIds:list[str] = [x for x in skillTreeNodes if x not in nodeReplacementInfo]
+        for nodeKey in nonReplacedNodeIds:
+            if '"isNotable"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                print('Nullifying notable node with id '+nodeKey)
+                self.nullify_notable_node(nodeKey)
+            elif '"isMastery"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                print('Nullifying mastery node with id '+nodeKey)
+                self.nullify_mastery_node(nodeKey)
+            elif '"ascendancyName"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                print('Nullifying ascendancy node with id '+nodeKey)
+                self.nullify_ascendancy_node(nodeKey)
+            else:
+                print('Nullifying node with id '+nodeKey)
+                self.nullify_normal_node(nodeKey)
         
 def load_tree(outputDirectory, fname='tree.lua'):
     fullPath = outputDirectory+fname
@@ -333,9 +377,9 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
             nodeReplacementInfo[node_df.iloc[line]['original']] = node_df.iloc[line]['new']
 
         #Test NodeTree generation and reconstruction before creating new code for replacing nodes
-        modified_tree.replace_nodes(original_tree, nodeReplacementInfo)
+        modified_tree.replace_nodes(original_tree.topLevelStorage, nodeReplacementInfo)
 
-        modified_tree.nullifyUnusedNodes(original_tree, nodeReplacementInfo)
+        modified_tree.nullifyUnusedNodes(original_tree.topLevelStorage, nodeReplacementInfo)
     #}
     modified_tree.reconstructAndSave_Tree(outputDirectory)
 
