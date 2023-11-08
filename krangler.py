@@ -299,23 +299,41 @@ class TreeStorage:
     def nullify_normal_node(self, nodeKeyID:str):
         print('Placeholder')
 
-    def nullifyAllSkillTreeNodes(self, fileData):
-        if TreeStorage.nodesGroup in original_treeTopLevel:
+    def nullifyAllSkillTreeNodes(self):
+        if TreeStorage.nodesGroup in self.topLevelStorage:
             for nodeKey in self.treeTopLevel[TreeStorage.nodesGroup]:
                 if '"isNotable"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                    print('Nullifying notable node with id '+nodeKey)
+                    print('Nullifying notable node with id '+nodeKey+'.\n')
                     self.nullify_notable_node(nodeKey)
                 elif '"isMastery"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                    print('Nullifying mastery node with id '+nodeKey)
+                    print('Nullifying mastery node with id '+nodeKey+'.\n')
                     self.nullify_mastery_node(nodeKey)
                 elif '"ascendancyName"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                    print('Nullifying ascendancy node with id '+nodeKey)
+                    print('Nullifying ascendancy node with id '+nodeKey+'.\n')
                     self.nullify_ascendancy_node(nodeKey)
-                else:
-                    print('Nullifying node with id '+nodeKey)
+                #Make sure to skip jewel nodes
+                elif '\"isJewelSocket\"' not in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying node with id '+nodeKey+'.\n')
                     self.nullify_normal_node(nodeKey)
         else:
             print('Error:Nodes group doesn\'t exist inside file')
+
+    def printDebugInfo(self):
+        print("Listing top level nodes and information about each skill node detected")
+        for topLevelGroup in self.treeTopLevel:
+            print('Detected '+topLevelGroup.key+" with name of "+topLevelGroup.name+'.\n')
+            if topLevelGroup.name==TreeStorage.nodesGroup:
+                for nodeKey in self.treeTopLevel[TreeStorage.nodesGroup]:
+                    if '"isNotable"' in topLevelGroup.subnodes:
+                        print('Notable node with id '+nodeKey+' is stored.\n')
+                    elif '"isMastery"' in topLevelGroup.subnodes:
+                        print('Nullifying mastery node with id '+nodeKey+' is stored.\n')
+                    elif '"ascendancyName"' in topLevelGroup.subnodes:
+                        print('Ascendancy node with id '+nodeKey+' is stored.\n')
+                    elif '"isJewelSocket"' in topLevelGroup.subnodes[nodeKey].subnodes:
+                        print('Jewel node with id '+nodeKey+' is stored.\n')
+                    else:
+                        print('Normal node with id '+nodeKey+' is stored.\n')
         
     def replace_node(self, original_treeTopLevel:dict[str, LuaNode], node_id:str, replace_id:str):
         print('Placeholder')
@@ -330,17 +348,18 @@ class TreeStorage:
             skillTreeNodes = original_treeTopLevel[TreeStorage.nodesGroup]
             nonReplacedNodeIds:list[str] = [x for x in skillTreeNodes.subnodes.keys() if x not in nodeReplacementInfo]
             for nodeKey in nonReplacedNodeIds:
-                if '"isNotable"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                    print('Nullifying notable node with id '+nodeKey)
+                if '\"isNotable\"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying notable node with id '+nodeKey+'.\n')
                     self.nullify_notable_node(nodeKey)
-                elif '"isMastery"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                    print('Nullifying mastery node with id '+nodeKey)
+                elif '\"isMastery\"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying mastery node with id '+nodeKey+'.\n')
                     self.nullify_mastery_node(nodeKey)
-                elif '"ascendancyName"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
-                    print('Nullifying ascendancy node with id '+nodeKey)
+                elif '\"ascendancyName\"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying ascendancy node with id '+nodeKey+'.\n')
                     self.nullify_ascendancy_node(nodeKey)
-                else:
-                    print('Nullifying node with id '+nodeKey)
+                #Make sure to skip jewel nodes
+                elif '\"isJewelSocket\"' not in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                    print('Nullifying node with id '+nodeKey+'.\n')
                     self.nullify_normal_node(nodeKey)
         else:
             print('Error:Nodes group doesn\'t exist inside file')
@@ -357,6 +376,9 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     original_tree:TreeStorage = TreeStorage(originalFileData)
     modified_tree:TreeStorage = original_tree
     nodeReplacementInfo:dict[str, str]={}
+
+    original_tree.printDebugInfo()
+
     if len(all_jsons) < 1:
     #{
         print('No JSON files found in data directory...Converting all nodes into nothing instead \n')
