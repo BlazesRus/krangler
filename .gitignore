@@ -12,3 +12,9 @@ data/all_nodes_nothingness.json
 data/tree.lua
 
 LocalDebug.txt
+
+.vs/slnx.sqlite
+
+.vs/krangler/FileContentIndex/
+
+.vs/krangler/v17/.wsuo
