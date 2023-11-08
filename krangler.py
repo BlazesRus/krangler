@@ -361,15 +361,25 @@ class TreeStorage:
         for nodeKey, nodeData in self.topLevel[TreeStorage.nodesGroup].items():
             print('Detected '+nodeKey+" with name of "+nodeData.name+'.\n')
             if nodeKey==TreeStorage.nodesGroup:
-                if '"isNotable"' in nodeData.subnodes:
-                    print('Notable node with id '+nodeKey+' is stored.\n')
-                elif '"isMastery"' in nodeData.subnodes:
-                    print('Nullifying mastery node with id '+nodeKey+' is stored.\n')
-                elif '"ascendancyName"' in nodeData.subnodes:
-                    print('Ascendancy node with id '+nodeKey+' is stored.\n')
-                elif '"isJewelSocket"' in nodeData.subnodes:
-                    print('Jewel node with id '+nodeKey+' is stored.\n')
-                else:
+                isPossibleNormalNode:bool = True
+                for subData in nodeData.subnodes.values:
+                    if subData=='"isNotable"':
+                        print('Notable node with id '+nodeKey+' is stored.\n')
+                        isPossibleNormalNode = False
+                        break
+                    elif subData=='"isMastery"':
+                        print('Nullifying mastery node with id '+nodeKey+' is stored.\n')
+                        isPossibleNormalNode = False
+                        break
+                    elif subData=='"ascendancyName"':
+                        print('Ascendancy node with id '+nodeKey+' is stored.\n')
+                        isPossibleNormalNode = False
+                        break
+                    elif subData=='\"isJewelSocket\"':
+                        print('Jewel node with id '+nodeKey+' is stored.\n')
+                        isPossibleNormalNode = False
+                        break
+                if(isPossibleNormalNode):
                     print('Normal node with id '+nodeKey+' is stored.\n')
         
     def replace_node(self, original_topLevel:dict[str, LuaNode], node_id:str, replace_id:str):
