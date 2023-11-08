@@ -194,7 +194,7 @@ class TreeStorage:
                 scanBuffer+=lineChar
         elif scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
             if lineChar=='{':
-                ++indentationLevel
+                indentationLevel += 1
                 self.nodeSubgroup[-1].hasSubNodes = True
                 scanLevel = ''
                 scanLevel, current_topLevelNode, scanBuffer, indentationLevel = self.recursivelyLoadNodeInput(lineChar, scanLevel, current_topLevelNode, scanBuffer, lastNodeKey, indentationLevel)
@@ -220,7 +220,7 @@ class TreeStorage:
         indentationLevel = 2;
 
         for line in fileData:#{
-            ++lineNumber;
+            lineNumber += 1;
             if(topLevel_luaNodeLineNumber==-1):#Add to root level before actual node info starts
             #{
                 if '[' in line:#{
