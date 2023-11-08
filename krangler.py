@@ -208,7 +208,7 @@ class TreeStorage:
                 scanBuffer += lineChar;
         return scanLevel, current_topLevelNode#making sure to pass values back to main function
 
-    def generateNodeTree(self, fileData):
+    def generateNodeTree(self, fileData:list[str]):
         topLevel_luaNodeLineNumber = -1
         current_topLevelNode = ''
         lineNumber = -1
@@ -284,6 +284,7 @@ class TreeStorage:
                     #}
             #}
         #}
+        print('Finished loading lua file into node tree.  '+str(lineNumber)+" lines total scanned.\n")
 
     def nullify_mastery_node(self, nodeKeyID:str):
         #Label nodes as Unknown Mastery and give every possible mastery effect or turn into normal nullified node(mastery nodes crash client if have no effects)
