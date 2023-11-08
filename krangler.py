@@ -73,11 +73,11 @@ class LuaNode:
     
 class TreeStorage:
     nodesGroup:str = '\"nodes\"'
-    def __init__(self, fileData:list[str]={}, RootStart='', topLevelStorage:dict[str, LuaNode]={}):
+    def __init__(self, fileData:list[str]={}, RootStart='', topLevel:dict[str, LuaNode]={}):
         #Lines starting from top of file until first top level node group start stored here
         self.RootStart = RootStart
-        #top level nodes such as "nodes" and "max_x" initialized here (topLevelStorage[TreeStorage.nodesGroup] to access skill node data)
-        self.topLevelStorage = topLevelStorage
+        #top level nodes such as "nodes" and "max_x" initialized here (topLevel[TreeStorage.nodesGroup] to access skill node data)
+        self.topLevel = topLevel
         if(fileData!={}):
             self.generateNodeTree(fileData)
     
@@ -141,7 +141,7 @@ class TreeStorage:
         nodeWhitespace = 4;
         with open(fullPath,'w') as f:
             f.write(self.RootStart)
-            for topLevelNode in self.topLevelStorage:#{
+            for topLevelNode in self.topLevel:#{
                 f.write('    [\"')
                 f.write(topLevelNode.name)#outputs ["nodes"]= { at this level
                 f.write('\"]= ')
@@ -175,7 +175,7 @@ class TreeStorage:
             f.write(skillTreeNode.RootEnd)
             f.close();
 
-    def recursivelyLoadNodeInput(self, lineChar, scanLevel, topLevel_luaNodeName, scanBuffer, lastNodeKey, indentationLevel=3):
+    def recursivelyLoadNodeInput(self, lineChar, scanLevel, current_topLevelNode, scanBuffer, lastNodeKey, indentationLevel=3):
         currentNodeKey:str = lastNodeKey
         if scanLevel=='':
             if lineChar=='{':
@@ -188,7 +188,7 @@ class TreeStorage:
             if lineChar==']':
                 currentNodeKey = scanBuffer
                 scanBuffer = ''
-                self.topLevelStorage[topLevel_luaNodeName].add_SubNodeToSubnode(lastNodeKey)#Add node to Tree
+                self.topLevel[current_topLevelNode].add_SubNodeToSubnode(lastNodeKey)#Add node to Tree
                 scanLevel = 'nextOrContent'#Search for either node content or subnodes
             else:
                 scanBuffer+=lineChar
@@ -197,20 +197,20 @@ class TreeStorage:
                 ++indentationLevel
                 self.nodeSubgroup[-1].hasSubNodes = True
                 scanLevel = ''
-                scanLevel, topLevel_luaNodeName, scanBuffer, indentationLevel = self.recursivelyLoadNodeInput(lineChar, scanLevel, topLevel_luaNodeName, scanBuffer, lastNodeKey, indentationLevel)
+                scanLevel, current_topLevelNode, scanBuffer, indentationLevel = self.recursivelyLoadNodeInput(lineChar, scanLevel, current_topLevelNode, scanBuffer, lastNodeKey, indentationLevel)
             elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
                 scanLevel = 'nodeContent'
                 scanBuffer = lineChar
         elif scanLevel=='nodeContent':
             if lineChar==',' or lineChar=='\n':
-                self.topLevelStorage[topLevel_luaNodeName].subnodes[currentNodeKey].nodeContent = scanBuffer
+                self.topLevel[current_topLevelNode].subnodes[currentNodeKey].nodeContent = scanBuffer
             else:
                 scanBuffer += lineChar;
-        return scanLevel, topLevel_luaNodeName#making sure to pass values back to main function
+        return scanLevel, current_topLevelNode#making sure to pass values back to main function
 
     def generateNodeTree(self, fileData):
         topLevel_luaNodeLineNumber = -1
-        topLevel_luaNodeName = ''
+        current_topLevelNode = ''
         lineNumber = -1
         scanLevel = ''
         scanBuffer = ''
@@ -233,18 +233,18 @@ class TreeStorage:
             #Start scanning actual info(indentation level for topLevel nodes are at 1 indentation,)
             if topLevel_luaNodeLineNumber!=-1:#{
                 for lineChar in line:#{
-                    if topLevel_luaNodeName=='':#{ (indentationLevel==1) at this point
+                    if current_topLevelNode=='':#{ (indentationLevel==1) at this point
                         if scanLevel=='' and lineChar=='[':
                             scanLevel = 'insideTopLevelNodeName'
                             scanBuffer = ''
                         elif lineChar==']':
-                            topLevel_luaNodeName = scanBuffer
+                            current_topLevelNode = scanBuffer
                             scanBuffer = ''
                             scanLevel = ''
                             if(line.contains(',')):
-                                self.topLevelStorage[topLevel_luaNodeName] = LuaNode(topLevel_luaNodeName, False)
+                                self.topLevel[current_topLevelNode] = LuaNode(current_topLevelNode, False)
                             else:
-                                self.topLevelStorage[topLevel_luaNodeName] = LuaNode(topLevel_luaNodeName, True)#["nodes"]= created at this point
+                                self.topLevel[current_topLevelNode] = LuaNode(current_topLevelNode, True)#["nodes"]= created at this point
                         elif scanLevel=='scanLevel':
                             scanBuffer += lineChar;
                     #}
@@ -254,14 +254,14 @@ class TreeStorage:
                                 if lineChar=='{':
                                     scanLevel = '{'
                                 elif(lineChar=='}'):#Exiting topLevelNode (ignoring the comma that might be after)
-                                    topLevel_luaNodeName = ''
+                                    current_topLevelNode = ''
                             elif scanLevel=='{' and lineChar=='[':
                                 scanLevel = '['
                             elif scanLevel=='[':
                                 if lineChar==']':
                                     lastNodeKey = scanBuffer
                                     scanBuffer = ''
-                                    self.topLevelStorage[topLevel_luaNodeName].add_SubNodeFromTopLevel(lastNodeKey)#Add node to Tree (SkillNodeID created here)
+                                    self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(lastNodeKey)#Add node to Tree (SkillNodeID created here)
                                     scanLevel = 'nextOrContent'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
                                 else:
                                     scanBuffer+=lineChar
@@ -275,12 +275,12 @@ class TreeStorage:
                                   scanBuffer = lineChar
                             elif scanLevel=='nodeContent':
                                 if lineChar==',' or lineChar=='\n':
-                                    self.topLevelStorage[topLevel_luaNodeName].subnodes[lastNodeKey].nodeContent = scanBuffer
+                                    self.topLevel[current_topLevelNode].subnodes[lastNodeKey].nodeContent = scanBuffer
                                 else:
                                     scanBuffer += lineChar;
                         else:
                             #At indentationLevel==3, scanning for things like ["name"] now (node added to subnodes once scanned)
-                            scanLevel, topLevel_luaNodeName, scanBuffer, indentationLevel  = self.recursivelyLoadNodeInput(lineChar, scanLevel, topLevel_luaNodeName, scanBuffer, lastNodeKey)
+                            scanLevel, current_topLevelNode, scanBuffer, indentationLevel  = self.recursivelyLoadNodeInput(lineChar, scanLevel, current_topLevelNode, scanBuffer, lastNodeKey)
                     #}
             #}
         #}
@@ -300,19 +300,19 @@ class TreeStorage:
         print('Placeholder')
 
     def nullifyAllSkillTreeNodes(self):
-        if TreeStorage.nodesGroup in self.topLevelStorage:
-            for nodeKey in self.treeTopLevel[TreeStorage.nodesGroup]:
-                if '"isNotable"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+        if TreeStorage.nodesGroup in self.topLevel:
+            for nodeKey in self.topLevel[TreeStorage.nodesGroup]:
+                if '"isNotable"' in self.topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
                     print('Nullifying notable node with id '+nodeKey+'.\n')
                     self.nullify_notable_node(nodeKey)
-                elif '"isMastery"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif '"isMastery"' in self.topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
                     print('Nullifying mastery node with id '+nodeKey+'.\n')
                     self.nullify_mastery_node(nodeKey)
-                elif '"ascendancyName"' in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif '"ascendancyName"' in self.topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
                     print('Nullifying ascendancy node with id '+nodeKey+'.\n')
                     self.nullify_ascendancy_node(nodeKey)
                 #Make sure to skip jewel nodes
-                elif '\"isJewelSocket\"' not in self.topLevelStorage.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif '\"isJewelSocket\"' not in self.topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
                     print('Nullifying node with id '+nodeKey+'.\n')
                     self.nullify_normal_node(nodeKey)
         else:
@@ -320,10 +320,10 @@ class TreeStorage:
 
     def printDebugInfo(self):
         print("Listing top level nodes and information about each skill node detected")
-        for topLevelGroup in self.treeTopLevel:
+        for topLevelGroup in self.topLevel:
             print('Detected '+topLevelGroup.key+" with name of "+topLevelGroup.name+'.\n')
             if topLevelGroup.name==TreeStorage.nodesGroup:
-                for nodeKey in self.treeTopLevel[TreeStorage.nodesGroup]:
+                for nodeKey in self.topLevel[TreeStorage.nodesGroup]:
                     if '"isNotable"' in topLevelGroup.subnodes:
                         print('Notable node with id '+nodeKey+' is stored.\n')
                     elif '"isMastery"' in topLevelGroup.subnodes:
@@ -335,30 +335,30 @@ class TreeStorage:
                     else:
                         print('Normal node with id '+nodeKey+' is stored.\n')
         
-    def replace_node(self, original_treeTopLevel:dict[str, LuaNode], node_id:str, replace_id:str):
+    def replace_node(self, original_topLevel:dict[str, LuaNode], node_id:str, replace_id:str):
         print('Placeholder')
 
-    def replace_nodes(self, original_treeTopLevel:dict[str, LuaNode], nodeReplacementInfo:dict[str, str]):
+    def replace_nodes(self, original_topLevel:dict[str, LuaNode], nodeReplacementInfo:dict[str, str]):
         print('Placeholder')
 
-    def nullifyUnusedNodes(self, original_treeTopLevel:dict[str, LuaNode], nodeReplacementInfo:dict[str, str]):
+    def nullifyUnusedNodes(self, original_topLevel:dict[str, LuaNode], nodeReplacementInfo:dict[str, str]):
         #Returning those keys not replaced on list based on https://stackoverflow.com/questions/35713093/how-can-i-compare-two-lists-in-python-and-return-not-matches
-        #For those inside original_tree.topLevelStorage[TreeStorage.nodesGroup].subnodes.keys() but not inside nodeReplacementInfo
-        if TreeStorage.nodesGroup in original_treeTopLevel:
-            skillTreeNodes = original_treeTopLevel[TreeStorage.nodesGroup]
+        #For those inside original_tree.topLevel[TreeStorage.nodesGroup].subnodes.keys() but not inside nodeReplacementInfo
+        if TreeStorage.nodesGroup in original_topLevel:
+            skillTreeNodes = original_topLevel[TreeStorage.nodesGroup]
             nonReplacedNodeIds:list[str] = [x for x in skillTreeNodes.subnodes.keys() if x not in nodeReplacementInfo]
             for nodeKey in nonReplacedNodeIds:
-                if '\"isNotable\"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                if '\"isNotable\"' in original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
                     print('Nullifying notable node with id '+nodeKey+'.\n')
                     self.nullify_notable_node(nodeKey)
-                elif '\"isMastery\"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif '\"isMastery\"' in original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
                     print('Nullifying mastery node with id '+nodeKey+'.\n')
                     self.nullify_mastery_node(nodeKey)
-                elif '\"ascendancyName\"' in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif '\"ascendancyName\"' in original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
                     print('Nullifying ascendancy node with id '+nodeKey+'.\n')
                     self.nullify_ascendancy_node(nodeKey)
                 #Make sure to skip jewel nodes
-                elif '\"isJewelSocket\"' not in original_treeTopLevel.topLevelStorage[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif '\"isJewelSocket\"' not in original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
                     print('Nullifying node with id '+nodeKey+'.\n')
                     self.nullify_normal_node(nodeKey)
         else:
@@ -404,9 +404,9 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
             nodeReplacementInfo[node_df.iloc[line]['original']] = node_df.iloc[line]['new']
 
         #Test NodeTree generation and reconstruction before creating new code for replacing nodes
-        modified_tree.replace_nodes(original_tree.topLevelStorage, nodeReplacementInfo)
+        modified_tree.replace_nodes(original_tree.topLevel, nodeReplacementInfo)
 
-        modified_tree.nullifyUnusedNodes(original_tree.topLevelStorage, nodeReplacementInfo)
+        modified_tree.nullifyUnusedNodes(original_tree.topLevel, nodeReplacementInfo)
     #}
     modified_tree.reconstructAndSave_Tree(outputDirectory)
 
