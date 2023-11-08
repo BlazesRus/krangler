@@ -241,7 +241,7 @@ class TreeStorage:
                             current_topLevelNode = scanBuffer
                             scanBuffer = ''
                             scanLevel = ''
-                            if(line.contains(',')):
+                            if ',' in line:
                                 self.topLevel[current_topLevelNode] = LuaNode(current_topLevelNode, False)
                             else:
                                 self.topLevel[current_topLevelNode] = LuaNode(current_topLevelNode, True)#["nodes"]= created at this point
