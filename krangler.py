@@ -244,7 +244,7 @@ class TreeStorage:
         scanBuffer = ''
         lastNodeKey:str
         #Can be passed as reference unlike string information and keeps better track of node position
-        currentNodeKeyPosition:list[str]
+        currentNodeKeyPosition:list[str] = {}
 
         #(indentation level for topLevel nodes are at 1 indentation,actual data for nodes starts at 2 indentation)
         indentationLevel = 2;
