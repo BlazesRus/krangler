@@ -27,6 +27,7 @@ ASCENDANCY_ERROR = [
     '            [\"stats\"] = {},\n']
 
 class LuaSubNode:
+    __slots__ = ["parentKey", "name", "nodeLevel", "hasSubNodes", "hasListInfo", "nodeContent", "subnodes"]
     def __init__(self, parentKey:str, name:str='', nodeLevel:int=2, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
         #If name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)  
         #   use name[1,-1] to extract information about index
@@ -49,6 +50,7 @@ class LuaSubNode:
         return self.topLevelKey+'_'+name
 
 class LuaNode:
+    __slots__ = ["name", "hasSubNodes", "nodeContent", "subnodes", "recursiveSubNodes"]
     def __init__(self, name:str, hasSubNodes:bool, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}, recursiveSubNodes:dict[str, LuaSubNode]={}):
         self.name = name
         self.hasSubNodes = hasSubNodes
@@ -66,9 +68,10 @@ class LuaNode:
         childKey:str = self.subnodes[subNodeName].get_subNodeKey(childNodeName)
         self.recursiveSubNodes[childKey]
     
-    def add_SubNodeFromTopLevel(self, parentKey:str, name:str='', topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
-        topLevelKey:str = parentKey+'_'+name
-        self.subnodes[topLevelKey] = LuaSubNode(parentKey, name, 2, topLevelKey, hasSubNodes, hasListInfo, nodeContent)
+    def add_SubNodeFromTopLevel(self, name:str='', topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
+        topLevelKey:str = self.name+'_'+name
+        self.subnodes[topLevelKey] = LuaSubNode(self.name, name, 2, topLevelKey, hasSubNodes, hasListInfo, nodeContent)
+        return topLevelKey;
     
     
     def add_SubNodeToSubnode(self, name:str, parentSubnode:LuaSubNode, SubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
@@ -78,7 +81,7 @@ class LuaNode:
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, name, parentSubnode.nodeLevel+1, topLevelKey, SubNodes, hasListInfo, nodeContent)
         #Making sure subnode gets child added
         parentSubnode.subnodes[topLevelKey] = name
-        #return parentSubnode
+        return topLevelKey
         
     # '"isMastery"' in nodeData.subnodes:
     def isMasteryNode(self, skillNode:LuaSubNode):
@@ -102,6 +105,7 @@ class LuaNode:
     
 class TreeStorage:
     nodesGroup:str = '\"nodes\"'
+    __slots__ = ["fileData", "RootStart", "topLevel"]
     def __init__(self, fileData:list[str]={}, RootStart='', topLevel:dict[str, LuaNode]={}):
         #Lines starting from top of file until first top level node group start stored here
         self.RootStart = RootStart
@@ -215,8 +219,8 @@ class TreeStorage:
             scanLevel = '['
         elif scanLevel=='[':
             if lineChar==']':
-                currentNodeKeyPosition.append(scanBuffer)
-                self.topLevel[current_topLevelNode].add_SubNodeToSubnode(scanBuffer, self.topLevel[current_topLevelNode].recursiveSubNodes[currentNodeKeyPosition[-2]])#Add node to Tree
+                subNodeKey:str = self.topLevel[current_topLevelNode].add_SubNodeToSubnode(scanBuffer, self.topLevel[current_topLevelNode].recursiveSubNodes[currentNodeKeyPosition[-2]])#Add node to Tree
+                currentNodeKeyPosition.append(subNodeKey)
                 scanBuffer = ''
                 scanLevel = 'nextOrContent'#Search for either node content or subnodes
             else:
@@ -244,7 +248,8 @@ class TreeStorage:
         lineNumber = -1
         scanLevel = ''
         scanBuffer = ''
-        lastNodeKey:str
+        currentNodeKey:str
+        currentNodeName:str
         #Can be passed as reference unlike string information and keeps better track of node position
         currentNodeKeyPosition:list[str] = {}
 
@@ -291,7 +296,7 @@ class TreeStorage:
                             #classes subgroup has {} as subgroups for class information such as for ascendancies
                             elif scanLevel=='{' and lineChar=='{':
                                 scanLevel = 'classinfo'
-                                lastNodeKey = '{'+str(len(self.topLevel[current_topLevelNode].subnodes))
+                                currentNodeKey = '{'+str(len(self.topLevel[current_topLevelNode].subnodes))
                                 currentNodeKeyPosition.append(lastNodeKey)
                                 self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(current_topLevelNode,lastNodeKey)
                             elif scanLevel=='classinfo' and lineChar=='[':
@@ -300,16 +305,18 @@ class TreeStorage:
                                 scanLevel = '['
                             elif scanLevel=='[':
                                 if lineChar==']':
-                                    lastNodeKey = scanBuffer
+                                    currentNodeName = scanBuffer
                                     scanBuffer = ''
-                                    self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(current_topLevelNode, lastNodeKey)#Add node to Tree (SkillNodeID created here)
+                                    currentNodeKey = self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(current_topLevelNode, currentNodeName)#Add node to Tree (SkillNodeID created here)
+                                    currentNodeKeyPosition.append(lastNodeKey)
                                     scanLevel = 'nextOrContent'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
                                 else:
                                     scanBuffer+=lineChar
                             elif scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
                                 if lineChar=='{':
                                     indentationLevel = 3
-                                    self.nodeSubgroup[-1].hasSubNodes = True
+                                    self.topLevel[current_topLevelNode].subnodes[lastNodeKey].hasSubNodes = True
+                                    currentNodeKeyPosition.append(lastNodeKey)
                                     scanLevel = ''
                                 elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
                                     scanLevel = 'nodeContent'
