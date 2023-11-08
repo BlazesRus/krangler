@@ -210,6 +210,7 @@ class TreeStorage:
                 scanLevel = '{'
             elif(lineChar=='}'):#Exiting Node level
                 --indentationLevel;
+                currentNodeKeyPosition.pop();#removing last position data
         elif scanLevel=='{' and lineChar=='[':
             scanLevel = '['
         elif scanLevel=='[':
@@ -232,6 +233,7 @@ class TreeStorage:
         elif scanLevel=='nodeContent':
             if lineChar==',' or lineChar=='\n':
                 self.topLevel[current_topLevelNode].recursiveSubNodes[currentNodeKeyPosition[-1]].nodeContent = scanBuffer
+                currentNodeKeyPosition.pop();#removing last position data
             else:
                 scanBuffer += lineChar;
         return scanLevel, scanBuffer, indentationLevel#making sure to pass values back to main function
@@ -275,7 +277,7 @@ class TreeStorage:
                                 self.topLevel[current_topLevelNode] = LuaNode(current_topLevelNode, False)
                             else:
                                 self.topLevel[current_topLevelNode] = LuaNode(current_topLevelNode, True)#["nodes"]= created at this point
-                        elif scanLevel=='scanLevel':
+                        elif scanLevel=='insideTopLevelNodeName':
                             scanBuffer += lineChar;
                     #}
                     else:#{
@@ -285,6 +287,7 @@ class TreeStorage:
                                     scanLevel = '{'
                                 elif(lineChar=='}'):#Exiting topLevelNode (ignoring the comma that might be after)
                                     current_topLevelNode = ''
+                                    currentNodeKeyPosition.pop();#removing last position data
                             #classes subgroup has {} as subgroups for class information such as for ascendancies
                             elif scanLevel=='{' and lineChar=='{':
                                 scanLevel = 'classinfo'
