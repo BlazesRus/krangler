@@ -72,7 +72,11 @@ class LuaNode:
         topLevelKey:str = self.name+'_'+name
         self.subnodes[topLevelKey] = LuaSubNode(self.name, name, 2, topLevelKey, hasSubNodes, hasListInfo, nodeContent)
         return topLevelKey;
-    
+
+    def add_GroupNodeFromTopLevel(self, topLevelKey:str=''):
+        nodeKey:str = '{'+str(len(self.topLevel[topLevelKey].subnodes))
+        self.subnodes[topLevelKey] = LuaSubNode(self.name, '{', 2, nodeKey)
+        return topLevelKey;
     
     def add_SubNodeToSubnode(self, name:str, parentSubnode:LuaSubNode, SubNodes:bool=False, hasListInfo:bool=False, nodeContent:str=''):
     #if size is one, then parent key is stored inside subnodes
@@ -81,6 +85,15 @@ class LuaNode:
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, name, parentSubnode.nodeLevel+1, topLevelKey, SubNodes, hasListInfo, nodeContent)
         #Making sure subnode gets child added
         parentSubnode.subnodes[topLevelKey] = name
+        return topLevelKey
+
+    def add_GroupNodeToSubnode(self, parentSubnode:LuaSubNode):
+    #if size is one, then parent key is stored inside subnodes
+        #parentKey+_+name
+        nodeKey:str = '{'+str(len(parentSubnode.subnodes))
+        self.recursiveSubNodes[nodeKey] = LuaSubNode(parentSubnode.topLevelKey, '{', parentSubnode.nodeLevel+1, nodeKey)
+        #Making sure subnode gets child added
+        parentSubnode.subnodes[nodeKey] = '{'
         return topLevelKey
         
     # '"isMastery"' in nodeData.subnodes:
@@ -218,9 +231,18 @@ class TreeStorage:
                 currentNodeKeyPosition.pop();#removing last position data
         elif scanLevel=='{' and lineChar=='[':
             scanLevel = '['
+        #Grouping node
+        elif scanLevel=='{' and lineChar=='{':
+            scanLevel = 'classinfo'
+            #ParentNode == self.topLevel[current_topLevelNode].recursiveSubNodes[currentNodeKeyPosition[-1]]
+            currentNodeKey = self.topLevel[current_topLevelNode].add_GroupNodeToSubnode(self.topLevel[current_topLevelNode].recursiveSubNodes[currentNodeKeyPosition[-1]])
+            currentNodeKeyPosition.append(currentNodeKey)
+        elif scanLevel=='classinfo' and lineChar=='[':
+            indentationLevel += 1
+            scanLevel = '['
         elif scanLevel=='[':
             if lineChar==']':
-                subNodeKey:str = self.topLevel[current_topLevelNode].add_SubNodeToSubnode(scanBuffer, self.topLevel[current_topLevelNode].recursiveSubNodes[currentNodeKeyPosition[-2]])#Add node to Tree
+                subNodeKey:str = self.topLevel[current_topLevelNode].add_SubNodeToSubnode(scanBuffer, self.topLevel[current_topLevelNode].recursiveSubNodes[currentNodeKeyPosition[-1]])#Add node to Tree
                 currentNodeKeyPosition.append(subNodeKey)
                 scanBuffer = ''
                 scanLevel = 'nextOrContent'#Search for either node content or subnodes
@@ -297,19 +319,18 @@ class TreeStorage:
                             #classes subgroup has {} as subgroups for class information such as for ascendancies
                             elif scanLevel=='{' and lineChar=='{':
                                 scanLevel = 'classinfo'
-                                currentNodeKey = '{'+str(len(self.topLevel[current_topLevelNode].subnodes))
+                                currentNodeKey = self.topLevel[current_topLevelNode].add_GroupNodeFromTopLevel(current_topLevelNode) 
                                 currentNodeKeyPosition.append(currentNodeKey)
-                                self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(current_topLevelNode,currentNodeKey)
                             elif scanLevel=='classinfo' and lineChar=='[':
                                 indentationLevel = 3
+                                scanLevel = '['
                             elif scanLevel=='{' and lineChar=='[':
                                 scanLevel = '['
                             elif scanLevel=='[':
                                 if lineChar==']':
                                     currentNodeName = scanBuffer
                                     scanBuffer = ''
-                                    currentNodeKey = self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(current_topLevelNode, currentNodeName)#Add node to Tree (SkillNodeID created here)
-                                    currentNodeKeyPosition.append(currentNodeKey)
+                                    currentNodeKey = self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(currentNodeName, current_topLevelNode)#Add node to Tree (SkillNodeID created here)
                                     scanLevel = 'nextOrContent'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
                                 else:
                                     scanBuffer+=lineChar
