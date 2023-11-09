@@ -123,14 +123,14 @@ class ScanInfo:
         self.scanBuffer = scanBuffer
         self.topLevelKey = topLevelKey
         
-    def get_scanLevel(self):
-        return self.scanLevel
+    # def get_scanLevel(self):
+    #     return self.scanLevel
     
-    def get_scanBuffer(self):
-        return self.scanBuffer
+    # def get_scanBuffer(self):
+    #     return self.scanBuffer
 
-    def get_topLevelKey(self):
-        return self.topLevelKey
+    # def get_topLevelKey(self):
+    #     return self.topLevelKey
     
     def set_scanLevel(self, value:str):
         self.scanLevel = value
@@ -264,32 +264,32 @@ class TreeStorage:
             f.close();
 
     def recursivelyLoadNodeInput(self, lineChar:str, ScanningInfo:ScanInfo, keyPosition:list[str], indentationLevel=3):
-        if ScanningInfo.get_scanLevel=='':
+        if ScanningInfo.scanLevel=='':
             if lineChar=='{':
                 ScanningInfo.set_scanLevel('{')
             elif(lineChar=='}'):#Exiting Node level
                 --indentationLevel;
                 keyPosition.pop();#removing last position data
-        elif ScanningInfo.get_scanLevel()=='{' and lineChar=='[':
+        elif ScanningInfo.scanLevel=='{' and lineChar=='[':
             ScanningInfo.set_scanLevel('[')
         #Grouping node
-        elif ScanningInfo.get_scanLevel()=='{' and lineChar=='{':
+        elif ScanningInfo.scanLevel=='{' and lineChar=='{':
             ScanningInfo.get_scanLevel('classinfo')
             #ParentNode == self.topLevel[topLevelKey].recursiveSubNodes[keyPosition[-1]]
-            currentNodeKey = self.topLevel[ScanningInfo.get_topLevelKey()].add_GroupNodeToSubnode(self.topLevel[ScanningInfo.get_topLevelKey()].recursiveSubNodes[keyPosition[-1]])
+            currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeToSubnode(self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])
             keyPosition.append(currentNodeKey)
-        elif ScanningInfo.get_scanLevel()=='classinfo' and lineChar=='[':
+        elif ScanningInfo.scanLevel=='classinfo' and lineChar=='[':
             indentationLevel += 1
             ScanningInfo.set_scanLevel('[')
-        elif ScanningInfo.get_scanLevel()=='[':
+        elif ScanningInfo.scanLevel=='[':
             if lineChar==']':
-                subNodeKey:str = self.topLevel[ScanningInfo.get_topLevelKey()].add_SubNodeToSubnode(ScanningInfo.get_scanBuffer(), self.topLevel[ScanningInfo.get_topLevelKey()].recursiveSubNodes[keyPosition[-1]])#Add node to Tree
+                subNodeKey:str = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])#Add node to Tree
                 keyPosition.append(subNodeKey)
                 ScanningInfo.reset_scanBuffer()
                 ScanningInfo.set_scanLevel('nextOrContent')#Search for either node content or subnodes
             else:
                 ScanningInfo.append_Buffer(lineChar)
-        elif ScanningInfo.get_scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
+        elif ScanningInfo.scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
             if lineChar=='{':
                 indentationLevel += 1
                 self.nodeSubgroup[-1].hasSubNodes = True
@@ -298,9 +298,9 @@ class TreeStorage:
             elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
                 ScanningInfo.set_scanLevel('nodeContent')
                 ScanningInfo.set_scanBuffer(lineChar)
-        elif ScanningInfo.get_scanLevel=='nodeContent':
+        elif ScanningInfo.scanLevel=='nodeContent':
             if lineChar==',' or lineChar=='\n':
-                self.topLevel[ScanningInfo.get_topLevelKey()].recursiveSubNodes[keyPosition[-1]].nodeContent = ScanningInfo.scanBuffer
+                self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]].nodeContent = ScanningInfo.scanBuffer
                 keyPosition.pop();#removing last position data
             else:
                 ScanningInfo.append_Buffer(lineChar);
@@ -339,50 +339,50 @@ class TreeStorage:
             #Start scanning actual info(indentation level for topLevel nodes are at 1 indentation,)
             if topLevel_luaNodeLineNumber!=-1:#{
                 for lineChar in line:#{
-                    if ScanningInfo.get_topLevelKey()=='':#{ (indentationLevel==1) at this point
-                        if ScanningInfo.get_scanLevel=='' and lineChar=='[':
+                    if ScanningInfo.topLevelKey=='':#{ (indentationLevel==1) at this point
+                        if ScanningInfo.scanLevel=='' and lineChar=='[':
                             ScanningInfo.set_scanLevel('insideTopLevelNodeName')
                             ScanningInfo.reset_scanBuffer()
                         elif lineChar==']':
-                            topLevelKey = ScanningInfo['scanBuffer']
+                            topLevelKey = ScanningInfo.scanBuffer
                             ScanningInfo.reset_scans()
                             if ',' in line:
-                                self.topLevel[ScanningInfo.get_topLevelKey()] = LuaNode(ScanningInfo.get_topLevelKey(), False)
+                                self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey, False)
                             else:
-                                self.topLevel[ScanningInfo.get_topLevelKey()] = LuaNode(ScanningInfo.get_topLevelKey(), True)#["nodes"]= created at this point
-                        elif ScanningInfo.get_scanLevel=='insideTopLevelNodeName':
+                                self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey, True)#["nodes"]= created at this point
+                        elif ScanningInfo.scanLevel=='insideTopLevelNodeName':
                             ScanningInfo.append_Buffer(lineChar);
                     #}
                     else:#{
                         if indentationLevel==2:#Scanning for NodeId now (node added to subnodes once scanned)
-                            if ScanningInfo.get_scanLevel=='':
+                            if ScanningInfo.scanLevel=='':
                                 if lineChar=='{':
                                     ScanningInfo.set_scanLevel('{')
                                 elif lineChar=='}':#Exiting topLevelKey (ignoring the comma that might be after)
                                     ScanningInfo.reset_topLevelKey()
                                     keyPosition.pop();#removing last position data
                             #classes subgroup has {} as subgroups for class information such as for ascendancies
-                            elif ScanningInfo.get_scanLevel=='{' and lineChar=='{':
+                            elif ScanningInfo.scanLevel=='{' and lineChar=='{':
                                 ScanningInfo.set_scanLevel('classinfo')
-                                currentNodeKey = self.topLevel[topLevelKey].add_GroupNodeFromTopLevel(ScanningInfo.get_topLevelKey()) 
+                                currentNodeKey = self.topLevel[topLevelKey].add_GroupNodeFromTopLevel(ScanningInfo.topLevelKey)
                                 keyPosition.append(currentNodeKey)
-                            elif ScanningInfo.get_scanLevel=='classinfo' and lineChar=='[':
+                            elif ScanningInfo.scanLevel=='classinfo' and lineChar=='[':
                                 indentationLevel = 3
                                 ScanningInfo.set_scanLevel('[')
-                            elif ScanningInfo.get_scanLevel()=='{' and lineChar=='[':
+                            elif ScanningInfo.scanLevel=='{' and lineChar=='[':
                                 ScanningInfo.set_scanLevel('[')
-                            elif ScanningInfo.set_scanLevel()=='[':
+                            elif ScanningInfo.scanLevel=='[':
                                 if lineChar==']':
-                                    currentNodeName = ScanningInfo.scanBuffer()
+                                    currentNodeName = ScanningInfo.scanBuffer
                                     ScanningInfo.reset_scanBuffer()
-                                    currentNodeKey = self.topLevel[ScanningInfo.get_topLevelKey()].add_SubNodeFromTopLevel(currentNodeName, ScanningInfo.get_topLevelKey())#Add node to Tree (SkillNodeID created here)
+                                    currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeFromTopLevel(currentNodeName, ScanningInfo.topLevelKey)#Add node to Tree (SkillNodeID created here)
                                     ScanningInfo.set_scanLevel('nextOrContent')#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
                                 else:
                                     ScanningInfo.append_Buffer(lineChar)
-                            elif ScanningInfo.get_scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
+                            elif ScanningInfo.scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
                                 if lineChar=='{':
                                     indentationLevel = 3
-                                    self.topLevel[ScanningInfo.get_topLevelKey()].subnodes[currentNodeKey].hasSubNodes = True
+                                    self.topLevel[ScanningInfo.topLevelKey].subnodes[currentNodeKey].hasSubNodes = True
                                     keyPosition.append(currentNodeKey)
                                     ScanningInfo.reset_scanLevel()
                                 elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
@@ -390,7 +390,7 @@ class TreeStorage:
                                     ScanningInfo.set_scanBuffer(lineChar)
                             elif ScanningInfo.scanLevel=='nodeContent':
                                 if lineChar==',' or lineChar=='\n':
-                                    self.topLevel[topLevelKey].subnodes[ScanningInfo['currentNodeKey']].nodeContent = ScanningInfo['scanBuffer']
+                                    self.topLevel[topLevelKey].subnodes[ScanningInfo['currentNodeKey']].nodeContent = ScanningInfo.scanBuffer
                                 else:
                                     ScanningInfo.append_Buffer(lineChar);
                         else:
