@@ -9,23 +9,6 @@ import os
 import platform
 import pathlib
 
-NOTHINGNESS = [
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"name\"] = \"Nothingness\",\n',
-    '            [\"stats\"] = {},\n']
-
-NOTHINGNESS_ASCENDANCY = [
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"name\"] = \"Unknown Ascendancy\",\n',
-    '            [\"ascendancyName\"] = \"None\",\n',
-    '            [\"stats\"] = {},\n']
-
-ASCENDANCY_ERROR = [
-    '            [\"icon\"] = \"Art/2DArt/SkillIcons/passives/MasteryBlank.png\",\n',
-    '            [\"name\"] = \"Ascendancy Replacement Error\",\n',
-    '            [\"ascendancyName\"] = \"None\",\n',
-    '            [\"stats\"] = {},\n']
-
 class LuaSubNode:
     #__slots__ = ["parentKey", "name", "nodeLevel", "hasSubNodes", "hasListInfo", "nodeContent", "subnodes"]
     def __init__(self, parentKey:str, name:str='', nodeLevel:int=2, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
@@ -158,14 +141,13 @@ class ScanInfo:
         self.set_topLevelKey = ''
  
 class TreeStorage:
-    nodesGroup:str = '\"nodes\"'
-    def __init__(self, fileData:list[str]={}, RootStart='', topLevel:dict[str, LuaNode]=dict()):
+    def __init__(self, RootStart : str, topLevel:dict[str, LuaNode]):
         # #Lines starting from top of file until first top level node group start stored here
         self.RootStart = RootStart
-        # #top level nodes such as "nodes" and "max_x" initialized here (topLevel[TreeStorage.nodesGroup] to access skill node data)
+        # #top level nodes such as "nodes" and "max_x" initialized here (topLevel['\"nodes\"'] to access skill node data)
         self.topLevel = topLevel
-        if(fileData!={}):
-            self.generateNodeTree(fileData)
+        # if(fileData!={}):
+        #     self.generateNodeTree(fileData)
 
     def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode, recursiveLevel=1):
         # # Left Padding of the string(based on https://www.geeksforgeeks.org/fill-a-python-string-with-spaces/)
@@ -218,7 +200,11 @@ class TreeStorage:
             f.write(parentNode.nodeContent)
 
     def reconstructAndSave_Tree(self, outputDirectory, fname='tree.lua'):
-        fullPath = outputDirectory+fname
+        fullPath:str
+        if(outputDirectory=='./Debug/'):
+            fullPath = './Debug/'+'treeOutput.lua'
+        else:
+            fullPath = outputDirectory+fname
     #   print('Saving edited tree to '+fullPath+'. \n')
 
         nodeWhitespace = 4;
@@ -302,7 +288,7 @@ class TreeStorage:
         return indentationLevel#making sure to pass values back to main function
 
     def generateNodeTree(self, fileData:list[str]):
-        if()
+        # self.topLevel:dict[str, LuaNode] = dict()
         topLevel_luaNodeLineNumber = -1
         lineNumber = -1
         #
@@ -412,8 +398,8 @@ class TreeStorage:
         print('Placeholder')
 
     def nullifyAllSkillTreeNodes(self):
-        if TreeStorage.nodesGroup in self.topLevel:
-            for nodeKey, nodeData in self.topLevel[TreeStorage.nodesGroup].items():
+        if '\"nodes\"' in self.topLevel:
+            for nodeKey, nodeData in self.topLevel['\"nodes\"'].items():
                 if '"isNotable"' in nodeData.subnodes:
                     print('Nullifying notable node with id '+nodeKey+'.\n')
                     self.nullify_notable_node(nodeKey)
@@ -438,7 +424,7 @@ class TreeStorage:
             for nodeKey, nodeData in topLevelNodeData.subnodes.items():
                 print('Detected subnode '+nodeKey+" with name of "+nodeData.name+'.\n')
                 print(" has "+str(len(nodeData.subnodes))+' subnodes.\n')
-                if nodeKey==TreeStorage.nodesGroup:
+                if nodeKey=='\"nodes\"':
                     isPossibleNormalNode:bool = True
                     for subData in nodeData.subnodes.values:
                         if subData=='"isNotable"':
@@ -468,22 +454,22 @@ class TreeStorage:
 
     def nullifyUnusedNodes(self, original_topLevel:dict[str, LuaNode], nodeReplacementInfo:dict[str, str]):
         #Returning those keys not replaced on list based on https://stackoverflow.com/questions/35713093/how-can-i-compare-two-lists-in-python-and-return-not-matches
-        #For those inside original_tree.topLevel[TreeStorage.nodesGroup].subnodes.keys() but not inside nodeReplacementInfo
-        if TreeStorage.nodesGroup in original_topLevel:
-            skillTreeNodes = original_topLevel[TreeStorage.nodesGroup]
+        #For those inside original_tree.topLevel['\"nodes\"'].subnodes.keys() but not inside nodeReplacementInfo
+        if '\"nodes\"' in original_topLevel:
+            skillTreeNodes = original_topLevel['\"nodes\"']
             nonReplacedNodeIds:list[str] = [x for x in skillTreeNodes.subnodes.keys() if x not in nodeReplacementInfo]
             for nodeKey in nonReplacedNodeIds:
-                if '\"isNotable\"' in original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                if '\"isNotable\"' in original_topLevel['\"nodes\"'].subnodes[nodeKey].subnodes:
                     print('Nullifying notable node with id '+nodeKey+'.\n')
                     self.nullify_notable_node(nodeKey)
-                elif '\"isMastery\"' in original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif '\"isMastery\"' in original_topLevel['\"nodes\"'].subnodes[nodeKey].subnodes:
                     print('Nullifying mastery node with id '+nodeKey+'.\n')
                     self.nullify_mastery_node(nodeKey)
-                elif '\"ascendancyName\"' in original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif '\"ascendancyName\"' in original_topLevel['\"nodes\"'].subnodes[nodeKey].subnodes:
                     print('Nullifying ascendancy node with id '+nodeKey+'.\n')
                     self.nullify_ascendancy_node(nodeKey)
                 #Make sure to skip jewel nodes
-                elif self.topLevel.isJewelSocket(original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey]):# elif '\"isJewelSocket\"' not in original_topLevel[TreeStorage.nodesGroup].subnodes[nodeKey].subnodes:
+                elif self.topLevel.isJewelSocket(original_topLevel['\"nodes\"'].subnodes[nodeKey]):# elif '\"isJewelSocket\"' not in original_topLevel['\"nodes\"'].subnodes[nodeKey].subnodes:
                     print('Nullifying node with id '+nodeKey+'.\n')
                     self.nullify_normal_node(nodeKey)
         else:
@@ -498,7 +484,8 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     all_jsons = glob.glob(basedir+'*.json')
     originalFileData = load_tree(inputDirectory)
     #Parsing lines into nodes instead
-    original_tree:TreeStorage = TreeStorage(originalFileData)
+    original_tree:TreeStorage = TreeStorage('', dict())
+    TreeStorage.generateNodeTree(originalFileData)
     original_tree.printDebugInfo()
     modified_tree:TreeStorage = original_tree
     nodeReplacementInfo:dict[str, str]={}
@@ -560,7 +547,9 @@ def main():
     OrigTreeOverrideData.close()
     OrigTree_DIR:str
     KrangledData_DIR:str
-    if OrigTreeOverride == "":
+    if OrigTreeOverride == "./Debug/":
+        OrigTree_DIR = './Debug/'
+    elif OrigTreeOverride == "":
         #detect if using Path of Building Source instead of using compiled code
         if os.path.isdir("POB_DIR/src/"):
             OrigTree_DIR = POBInstallLocation+'/src/TreeData/3_22/'
@@ -568,18 +557,20 @@ def main():
             OrigTree_DIR = POBInstallLocation+'/TreeData/3_22/'
     else:
         OrigTree_DIR = OrigTreeOverride
-    #Edit dataFolderOutputOverride.txt file to override OrigTree_DIR default pathing
-    OrigTreeOverrideData = open("dataFolderOutputOverride.txt", "r")
-    OutputOverride:str = OrigTreeOverrideData.readline().rstrip()
-    OrigTreeOverrideData.close()
-    if OutputOverride == "":
-        if os.path.isdir("POB_DIR/src/"):
-            KrangledData_DIR = POBInstallLocation+str('/src/TreeData/Krangled3_22/')
-        else:
-            KrangledData_DIR = POBInstallLocation+str('/TreeData/Krangled3_22/')
+    if OrigTreeOverride == './Debug/':
+        KrangledData_DIR = './Debug/'
     else:
-        KrangledData_DIR = OutputOverride
-
+        #Edit dataFolderOutputOverride.txt file to override OrigTree_DIR default pathing
+        OrigTreeOverrideData = open("dataFolderOutputOverride.txt", "r")
+        OutputOverride:str = OrigTreeOverrideData.readline().rstrip()
+        OrigTreeOverrideData.close()
+        if OutputOverride == "":
+            if os.path.isdir("POB_DIR/src/"):
+                KrangledData_DIR = POBInstallLocation+str('/src/TreeData/Krangled3_22/')
+            else:
+                KrangledData_DIR = POBInstallLocation+str('/TreeData/Krangled3_22/')
+        else:
+            KrangledData_DIR = OutputOverride
     replace_all_nodes(OrigTree_DIR, KrangledData_DIR)
     #Editing copied file instead of replacing file in directory
 
