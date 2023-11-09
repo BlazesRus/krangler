@@ -107,10 +107,11 @@ class TreeStorage:
     nodesGroup:str = '\"nodes\"'
     __slots__ = ["fileData", "RootStart", "topLevel"]
     def __init__(self, fileData):
+        #fileData:list[str]={}, RootStart='', topLevel:dict[str, LuaNode]={}
         # #Lines starting from top of file until first top level node group start stored here
-        # self.RootStart = RootStart
+        self.RootStart:str = ''
         # #top level nodes such as "nodes" and "max_x" initialized here (topLevel[TreeStorage.nodesGroup] to access skill node data)
-        # self.topLevel = topLevel
+        self.topLevel:dict[str, LuaNode] = {}
         if(fileData!={}):
             self.generateNodeTree(fileData)
     
@@ -251,7 +252,7 @@ class TreeStorage:
         currentNodeKey:str
         currentNodeName:str
         #Can be passed as reference unlike string information and keeps better track of node position
-        currentNodeKeyPosition:list[str] = {}
+        currentNodeKeyPosition:list[str] = []
 
         #(indentation level for topLevel nodes are at 1 indentation,actual data for nodes starts at 2 indentation)
         indentationLevel = 2;
@@ -297,8 +298,8 @@ class TreeStorage:
                             elif scanLevel=='{' and lineChar=='{':
                                 scanLevel = 'classinfo'
                                 currentNodeKey = '{'+str(len(self.topLevel[current_topLevelNode].subnodes))
-                                currentNodeKeyPosition.append(lastNodeKey)
-                                self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(current_topLevelNode,lastNodeKey)
+                                currentNodeKeyPosition.append(currentNodeKey)
+                                self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(current_topLevelNode,currentNodeKey)
                             elif scanLevel=='classinfo' and lineChar=='[':
                                 indentationLevel = 3
                             elif scanLevel=='{' and lineChar=='[':
@@ -308,22 +309,22 @@ class TreeStorage:
                                     currentNodeName = scanBuffer
                                     scanBuffer = ''
                                     currentNodeKey = self.topLevel[current_topLevelNode].add_SubNodeFromTopLevel(current_topLevelNode, currentNodeName)#Add node to Tree (SkillNodeID created here)
-                                    currentNodeKeyPosition.append(lastNodeKey)
+                                    currentNodeKeyPosition.append(currentNodeKey)
                                     scanLevel = 'nextOrContent'#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
                                 else:
                                     scanBuffer+=lineChar
                             elif scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
                                 if lineChar=='{':
                                     indentationLevel = 3
-                                    self.topLevel[current_topLevelNode].subnodes[lastNodeKey].hasSubNodes = True
-                                    currentNodeKeyPosition.append(lastNodeKey)
+                                    self.topLevel[current_topLevelNode].subnodes[currentNodeKey].hasSubNodes = True
+                                    currentNodeKeyPosition.append(currentNodeKey)
                                     scanLevel = ''
                                 elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
                                     scanLevel = 'nodeContent'
                                     scanBuffer = lineChar
                             elif scanLevel=='nodeContent':
                                 if lineChar==',' or lineChar=='\n':
-                                    self.topLevel[current_topLevelNode].subnodes[lastNodeKey].nodeContent = scanBuffer
+                                    self.topLevel[current_topLevelNode].subnodes[currentNodeKey].nodeContent = scanBuffer
                                 else:
                                     scanBuffer += lineChar;
                         else:
