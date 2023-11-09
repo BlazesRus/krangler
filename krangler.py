@@ -159,18 +159,13 @@ class ScanInfo:
  
 class TreeStorage:
     nodesGroup:str = '\"nodes\"'
-    __slots__ = ["fileData", "RootStart", "topLevel"]
-    def __init__(self, fileData):
-        #fileData:list[str]={}, RootStart='', topLevel:dict[str, LuaNode]={}
+    def __init__(self, fileData:list[str]={}, RootStart='', topLevel:dict[str, LuaNode]=dict()):
         # #Lines starting from top of file until first top level node group start stored here
-        self.RootStart:str = ''
+        self.RootStart = RootStart
         # #top level nodes such as "nodes" and "max_x" initialized here (topLevel[TreeStorage.nodesGroup] to access skill node data)
-        self.topLevel:dict[str, LuaNode] = dict[str, LuaNode]()
+        self.topLevel = topLevel
         if(fileData!={}):
             self.generateNodeTree(fileData)
-    
-    def get_name(self):
-        return self.name
 
     def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode, recursiveLevel=1):
         # # Left Padding of the string(based on https://www.geeksforgeeks.org/fill-a-python-string-with-spaces/)
@@ -307,6 +302,7 @@ class TreeStorage:
         return indentationLevel#making sure to pass values back to main function
 
     def generateNodeTree(self, fileData:list[str]):
+        if()
         topLevel_luaNodeLineNumber = -1
         lineNumber = -1
         #
@@ -345,11 +341,11 @@ class TreeStorage:
                             ScanningInfo.reset_scanBuffer()
                         elif lineChar==']':
                             topLevelKey = ScanningInfo.scanBuffer
-                            ScanningInfo.reset_scans()
                             if ',' in line:
                                 self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey, False)
                             else:
                                 self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey, True)#["nodes"]= created at this point
+                            ScanningInfo.reset_scans()
                         elif ScanningInfo.scanLevel=='insideTopLevelNodeName':
                             ScanningInfo.append_Buffer(lineChar);
                     #}
