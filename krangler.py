@@ -27,7 +27,7 @@ ASCENDANCY_ERROR = [
     '            [\"stats\"] = {},\n']
 
 class LuaSubNode:
-    __slots__ = ["parentKey", "name", "nodeLevel", "hasSubNodes", "hasListInfo", "nodeContent", "subnodes"]
+    #__slots__ = ["parentKey", "name", "nodeLevel", "hasSubNodes", "hasListInfo", "nodeContent", "subnodes"]
     def __init__(self, parentKey:str, name:str='', nodeLevel:int=2, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
         #If name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)  
         #   use name[1,-1] to extract information about index
@@ -50,7 +50,7 @@ class LuaSubNode:
         return self.topLevelKey+'_'+name
 
 class LuaNode:
-    __slots__ = ["name", "hasSubNodes", "nodeContent", "subnodes", "recursiveSubNodes"]
+    #__slots__ = ["name", "hasSubNodes", "nodeContent", "subnodes", "recursiveSubNodes"]
     def __init__(self, name:str, hasSubNodes:bool, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}, recursiveSubNodes:dict[str, LuaSubNode]={}):
         self.name = name
         self.hasSubNodes = hasSubNodes
@@ -106,11 +106,11 @@ class LuaNode:
 class TreeStorage:
     nodesGroup:str = '\"nodes\"'
     __slots__ = ["fileData", "RootStart", "topLevel"]
-    def __init__(self, fileData:list[str]={}, RootStart='', topLevel:dict[str, LuaNode]={}):
-        #Lines starting from top of file until first top level node group start stored here
-        self.RootStart = RootStart
-        #top level nodes such as "nodes" and "max_x" initialized here (topLevel[TreeStorage.nodesGroup] to access skill node data)
-        self.topLevel = topLevel
+    def __init__(self, fileData):
+        # #Lines starting from top of file until first top level node group start stored here
+        # self.RootStart = RootStart
+        # #top level nodes such as "nodes" and "max_x" initialized here (topLevel[TreeStorage.nodesGroup] to access skill node data)
+        # self.topLevel = topLevel
         if(fileData!={}):
             self.generateNodeTree(fileData)
     
