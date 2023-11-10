@@ -75,7 +75,8 @@ class LuaNode:
         return self.name
 
     def get_topLevelSubnodeSize(self, topLevelKey:str=''):
-        subNodeReference = self.subnodes[topLevelKey].subnodes
+        topLevelNode = self.subnodes[topLevelKey]
+        subNodeReference = topLevelNode.subnodes
         return len(subNodeReference)
     
     def hasSubNodes(self):
@@ -294,6 +295,8 @@ class TreeStorage:
             ScanningInfo.get_scanLevel('classinfo')
             #ParentNode == self.topLevel[topLevelKey].recursiveSubNodes[keyPosition[-1]]
             currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeToSubnode(self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])
+            if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
+                print("Failed to add grouping subnode:'+currentNodeKey+' to Tree at indentation level "+str(indentationLevel))
             keyPosition.append(currentNodeKey)
         elif ScanningInfo.scanLevel=='classinfo' and lineChar=='[':
             indentationLevel += 1
@@ -301,6 +304,8 @@ class TreeStorage:
         elif ScanningInfo.scanLevel=='[':
             if lineChar==']':
                 subNodeKey:str = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])#Add node to Tree
+                if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
+                    print("Failed to add subnode:'+subNodeKey+' to Tree at indentation level "+str(indentationLevel))
                 keyPosition.append(subNodeKey)
                 ScanningInfo.reset_scanBuffer()
                 ScanningInfo.set_scanLevel('nextOrContent')#Search for either node content or subnodes
@@ -366,6 +371,8 @@ class TreeStorage:
                             else:
                                 ScanningInfo.topLevelKey = ScanningInfo.scanBuffer
                                 self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey)
+                            if(ScanningInfo.topLevelKey not in self.topLevel):
+                                print("Failed to add topLevelNode:'+ScanningInfo.topLevelKey+' to Tree")
                             ScanningInfo.reset_scans()
                         elif ScanningInfo.scanLevel=='insideTopLevelNodeName':
                             ScanningInfo.append_Buffer(lineChar);
@@ -382,6 +389,8 @@ class TreeStorage:
                             elif ScanningInfo.scanLevel=='{' and lineChar=='{':
                                 ScanningInfo.set_scanLevel('classinfo')
                                 currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeFromTopLevel(ScanningInfo.topLevelKey)
+                                if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].subnodes):
+                                    print("Failed to add grouping subnode:'+currentNodeKey+' to Tree")
                                 keyPosition.append(currentNodeKey)
                             elif ScanningInfo.scanLevel=='classinfo' and lineChar=='[':
                                 indentationLevel = 3
@@ -393,6 +402,8 @@ class TreeStorage:
                                     currentNodeName = ScanningInfo.scanBuffer
                                     ScanningInfo.reset_scanBuffer()
                                     currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeFromTopLevel(currentNodeName, ScanningInfo.topLevelKey)#Add node to Tree (SkillNodeID created here)
+                                    if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].subnodes):
+                                        print("Failed to add subnode:'+currentNodeKey+' to Tree")
                                     ScanningInfo.set_scanLevel('nextOrContent')#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
                                 else:
                                     ScanningInfo.append_Buffer(lineChar)
