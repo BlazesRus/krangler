@@ -10,8 +10,8 @@ import platform
 import pathlib
 
 class LuaSubNode:
-    __slots__ = ["parentKey", "name", "nodeLevel", "topLevelKey", "recursiveSubNodes", "hasListInfo"]
-    def __init__(self, parentKey:str, name, nodeLevel, topLevelKey, hasSubNodes, hasListInfo:bool=False, nodeContent:str=''):
+    #__slots__ = ["parentKey", "name", "nodeLevel", "hasSubNodes", "hasListInfo", "nodeContent", "subnodes"]
+    def __init__(self, parentKey:str, name:str='', nodeLevel:int=2, topLevelKey:str='', hasSubNodes:bool=False, hasListInfo:bool=False, nodeContent:str='', subnodes:dict[str,str]={} ):
         #If name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)  
         #   use name[1,-1] to extract information about index
         self.name = name
@@ -19,12 +19,12 @@ class LuaSubNode:
         self.topLevelKey = topLevelKey
         self.hasSubNodes = hasSubNodes
         self.hasListInfo = hasListInfo
-        self.nodeContent:str = ''
-        #Actual subnodes stored inside the parent LuaNode (key refers to topLevelKey, value refers to name)
-        self.subnodes:dict[str,str]={}
+        self.nodeContent = nodeContent
+        #Actual subnodes stored inside the parent LuaNode (key refers to topLevelKey)
+        self.subnodes = subnodes
         #if nodeLevel == 2, then parent is one of LuaNodes (iteration level is equal to this)
-        self.nodeLevel:int = nodeLevel
-        self.parentKey:str = parentKey
+        self.nodeLevel = nodeLevel
+        self.parentKey = parentKey
   
     def get_name(self):
         return self.name
@@ -33,16 +33,16 @@ class LuaSubNode:
         return self.topLevelKey+'_'+name
 
 class LuaNode:
-    __slots__ = ["name", "hasSubNodes", "nodeContent", "subnodes", "recursiveSubNodes"]
-    def __init__(self, name:str, hasSubNodes):
+    #__slots__ = ["name", "hasSubNodes", "nodeContent", "subnodes", "recursiveSubNodes"]
+    def __init__(self, name:str, hasSubNodes:bool, nodeContent:str='', subnodes:dict[str, LuaSubNode]={}, recursiveSubNodes:dict[str, LuaSubNode]={}):
         self.name = name
-        self.hasSubNodes:bool = hasSubNodes
-        self.nodeContent = ''
+        self.hasSubNodes = hasSubNodes
+        self.nodeContent = nodeContent
         #Node ID data stored at this level (the first subnodes are added here, rest get added to recursiveSubNodes)
         #  keys for these refer to the name of the subnode, with the actual values refering to the subnode
-        self:dict[str, LuaSubNode]={}
+        self.subnodes = subnodes
         #["name"] and other fields stored here (access via self.subnodes[NodeId]
-        self.recursiveSubNodes:dict[str, LuaSubNode] = {}
+        self.recursiveSubNodes:dict[str, LuaSubNode] = recursiveSubNodes
     
     def get_name(self):
         return self.name
@@ -106,14 +106,14 @@ class ScanInfo:
         self.scanBuffer = scanBuffer
         self.topLevelKey = topLevelKey
         
-    def get_scanLevel(self):
-        return self.scanLevel
+    # def get_scanLevel(self):
+    #     return self.scanLevel
     
-    def get_scanBuffer(self):
-        return self.scanBuffer
+    # def get_scanBuffer(self):
+    #     return self.scanBuffer
 
-    def get_topLevelKey(self):
-        return self.topLevelKey
+    # def get_topLevelKey(self):
+    #     return self.topLevelKey
     
     def set_scanLevel(self, value:str):
         self.scanLevel = value
@@ -141,14 +141,13 @@ class ScanInfo:
         self.set_topLevelKey = ''
  
 class TreeStorage:
-    __slots__ = ["RootStart", "topLevel"]
-    def __init__(self, fileData:list[str]):
+    def __init__(self, RootStart : str, topLevel:dict[str, LuaNode]):
         # #Lines starting from top of file until first top level node group start stored here
-        self.RootStart:str = ''
+        self.RootStart = RootStart
         # #top level nodes such as "nodes" and "max_x" initialized here (topLevel['\"nodes\"'] to access skill node data)
-        self.topLevel:dict[str, LuaNode] = topLevel
-        if(fileData!={}):
-            self.generateNodeTree(fileData)
+        self.topLevel = topLevel
+        # if(fileData!={}):
+        #     self.generateNodeTree(fileData)
 
     def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode, recursiveLevel=1):
         # # Left Padding of the string(based on https://www.geeksforgeeks.org/fill-a-python-string-with-spaces/)
