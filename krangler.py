@@ -11,7 +11,7 @@ import pathlib
 
 class LuaSubNode:
     __slots__ = ["parentKey", "name", "nodeLevel", "topLevelKey", "subnodes", "hasListInfo", "nodeContent"]
-    def __init__(self, parentKey:str, name, nodeLevel, topLevelKey, hasListInfo:bool):
+    def __init__(self, parentKey:str, name, nodeLevel, topLevelKey):
         #Can detect if parent is from topLevel by lack of _ character in name
         self.parentKey:str = parentKey
         #if name is '{', then node is a grouping node that stores other nodes inside {}
@@ -32,6 +32,12 @@ class LuaSubNode:
 
     def get_nodeLevel(self):
         return self.nodeLevel
+
+    def get_topLevelKey(self):
+        return self.topLevelKey
+
+    def get_hasListInfo(self):
+        return self.hasListInfo
 
     def hasSubNodes(self):
         return len(self.subnodes)!=0
@@ -61,12 +67,16 @@ class LuaNode:
         self.nodeContent = ''
         #Node ID data stored at this level (the first subnodes are added here, rest get added to recursiveSubNodes)
         #  keys for these refer to the name of the subnode, with the actual values refering to the subnode
-        self:dict[str, LuaSubNode]={}
+        self.subnodes:dict[str, LuaSubNode] = {}
         #["name"] and other fields stored here (access via self.subnodes[NodeId]
         self.recursiveSubNodes:dict[str, LuaSubNode] = {}
     
     def get_name(self):
         return self.name
+
+    def get_topLevelSubnodeSize(self, topLevelKey:str=''):
+        subNodeReference = self.subnodes[topLevelKey].subnodes
+        return len(subNodeReference)
     
     def hasSubNodes(self):
         return len(self.subnodes)!=0
@@ -81,8 +91,8 @@ class LuaNode:
         return topLevelKey;
 
     def add_GroupNodeFromTopLevel(self, parentKey:str=''):
-        nodeKey:str = '{'+str(len(self.topLevel[parentKey].subnodes))
-        self.subnodes[topLevelKey] = LuaSubNode(parentKey, '{', 2, nodeKey)
+        nodeKey:str = '{'+str(self.get_topLevelSubnodeSize(parentKey))
+        self.subnodes[nodeKey] = LuaSubNode(parentKey, '{', 2, nodeKey)
         return nodeKey;
     
     def add_SubNodeToSubnode(self, name:str, parentSubnode:LuaSubNode):
@@ -124,23 +134,23 @@ class LuaNode:
         
     # '"isMastery"' in nodeData.subnodes:
     def isMasteryNode(self, skillNode:LuaSubNode):
-        return '"isMastery"' in skillNode.subnodes.values
+        return '"isMastery"' in skillNode.subnodes.values()
     
     #'"ascendancyName"' in nodeData.subnodes:
     def isAscendancyNode(self, skillNode:LuaSubNode):
-        return '"ascendancyName"' in skillNode.subnodes.values
+        return '"ascendancyName"' in skillNode.subnodes.values()
     
     def isNotableNode(self, skillNode:LuaSubNode):
         # '"isNotable"' in nodeData.subnodes:
-        return '"isNotable"' in skillNode.subnodes.values
+        return '"isNotable"' in skillNode.subnodes.values()
 
     def isJewelSocket(self, skillNode:LuaSubNode):
         # '"isJewelSocket"' in nodeData.subnodes:
-        return '"isJewelSocket"' in skillNode.subnodes.values
+        return '"isJewelSocket"' in skillNode.subnodes.values()
     
     def isNotJewelSocket(self, skillNode:LuaSubNode):
         # '"isJewelSocket"' not in nodeData.subnodes.:
-        return '"isJewelSocket"' not in skillNode.subnodes.values
+        return '"isJewelSocket"' not in skillNode.subnodes.values()
 
 class ScanInfo:
     __slots__ = ["scanLevel", "scanBuffer", "topLevelKey"]
@@ -194,11 +204,6 @@ class TreeStorage:
             self.generateNodeTree(fileData)
 
     def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode):
-        # # Left Padding of the string(based on https://www.geeksforgeeks.org/fill-a-python-string-with-spaces/)
-        # whitespacePaddedOutput = ('{: >recursiveLevel*4}'.format(string))
-        # print(f'\"{whitespacePaddedOutput}\"')
-        # alternatives can use '    '*recursiveLevel
-        whitespacePaddedOutput:str
         if(parentNode.hasListInfo):
             if(parentNode.nodeContent==''):
                 f.write('\"]= {}\n')
@@ -220,7 +225,6 @@ class TreeStorage:
                     f.write((parentNode.get_nodeLevel+1)*' '+'{')
                     self.recursiveNodeOutput(f, currentTopLevelNode, parentNode)
                     f.write((parentNode.get_nodeLevel+1)*' '+'}')
-                    f.write(f'\"{whitespacePaddedOutput}\"')
                 #}
                 else:
                     f.write((parentNode.get_nodeLevel+1)*' '+'[')
@@ -514,8 +518,7 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     all_jsons = glob.glob(basedir+'*.json')
     originalFileData = load_tree(inputDirectory)
     #Parsing lines into nodes instead
-    original_tree:TreeStorage = TreeStorage('', dict())
-    TreeStorage.generateNodeTree(originalFileData)
+    original_tree:TreeStorage = TreeStorage(originalFileData)
     original_tree.printDebugInfo()
     modified_tree:TreeStorage = original_tree
     nodeReplacementInfo:dict[str, str]={}
