@@ -346,9 +346,9 @@ class TreeStorage:
             ScanningInfo.set_scanLevel('[')
         elif ScanningInfo.scanLevel=='[':
             if lineChar==']':
-                # if(keyPosition[-1] not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
-                #     print(keyPosition[-1]+' not detected within '+ScanningInfo.topLevelKey+'\'s recursive subnode storage.\n')
-                #     return -1#force early exit on error(-1 breaks the loop)
+                if(keyPosition[-1] not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
+                    print(keyPosition[-1]+' not detected within '+ScanningInfo.topLevelKey+'\'s recursive subnode storage.\n')
+                    return -1#force early exit on error(-1 breaks the loop)
                 subNodeKey:str = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])#Add node to Tree
                 if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
                     print("Failed to add subnode:'+subNodeKey+' to Tree at indentation level "+str(indentationLevel))
@@ -471,8 +471,8 @@ class TreeStorage:
                             indentationLevel  = self.recursivelyLoadNodeInput(lineChar, ScanningInfo, keyPosition, indentationLevel)
                     #}
             #}
-            # if indentationLevel==-1:#forcing early end to loop because of error
-            #     break;
+            if indentationLevel==-1:#forcing early end to loop because of error
+                break;
         #}
         
         print('Finished loading lua file into node tree.  '+str(lineNumber)+" lines total scanned.\n")
