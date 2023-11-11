@@ -9,6 +9,10 @@ import os
 import platform
 import pathlib
 
+#forward references(based on https://stackoverflow.com/questions/19376923/how-to-use-a-type-defined-later-for-function-annotations)
+class LuaSubNode: pass
+class LuaNode: pass
+
 class LuaSubNode(object):
     __slots__ = ["parentKey", "name", "nodeLevel", "topLevelKey", "subnodes", "hasListInfo", "nodeContent"]
     def __init__(self, parentKey:str, name, nodeLevel, topLevelKey):
@@ -97,6 +101,23 @@ class LuaSubNode(object):
                 elif(isPossibleNormalNode):
                     print('Node with id '+nodeKey+' is stored.\n')
 
+    def add_SubNodeToSubnode(self, name:str):
+        #parentsubNode is self.recursiveSubNodes[parentSubnodeKey]
+        #parentKey+_+name
+        topLevelKey:str = self.topLevelKey+'_'+name
+        self.subnodes[topLevelKey] = name
+        #Handling the topLevelNode changes inside topLevelFunction (topLevel[topLevelKey])
+        return topLevelKey
+
+    def add_GroupNodeToSubnode(self):
+        #parentKey+_+name
+        nodePostfix:str = '{'+str(len(self.subnodes))
+        topLevelKey:str = self.topLevelKey+'_'+nodePostfix
+        #Making sure subnode gets child added
+        self.subnodes[topLevelKey] = '{'
+        #Handling the topLevelNode changes inside topLevelFunction (topLevel[topLevelKey])
+        return topLevelKey
+
 class LuaNode(object):
     __slots__ = ["name", "nodeContent", "subnodes", "recursiveSubNodes"]
     def __init__(self, name:str):
@@ -129,22 +150,15 @@ class LuaNode(object):
         return nodeKey;
     
     def add_SubNodeToSubnode(self, name:str, parentSubnode:LuaSubNode):
-        #parentsubNode is self.recursiveSubNodes[parentSubnodeKey]
         #parentKey+_+name
-        topLevelKey:str = parentSubnode.topLevelKey+'_'+name
+        topLevelKey:str = parentSubnode.add_SubNodeToSubnode(name)
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, name, parentSubnode.nodeLevel+1, topLevelKey)
-        #Making sure subnode gets child added
-        parentSubnode.subnodes[topLevelKey] = name
         return topLevelKey
 
     def add_GroupNodeToSubnode(self, parentSubnode:LuaSubNode):
-        #parentsubNode is self.recursiveSubNodes[parentSubnodeKey]
         #parentKey+_+name
-        nodePostfix:str = '{'+str(len(parentSubnode.subnodes))
-        topLevelKey:str = parentSubnode.topLevelKey+'_'+nodePostfix
+        topLevelKey:str = parentSubnode.add_GroupNodeToSubnode()
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
-        #Making sure subnode gets child added
-        parentSubnode.subnodes[topLevelKey] = '{'
         return topLevelKey
 
     def add_SubNodeToSubnodeFromKey(self, name:str, parentSubnodeKey:str):
