@@ -368,7 +368,6 @@ class TreeStorage:
                     #}
             #}
             f.write('}')
-            f.write(skillTreeNode.RootEnd)
             f.close();
 
     def recursivelyLoadNodeInput(self, lineChar:str, ScanningInfo:ScanInfo, keyPosition:list[str], indentationLevel=3):
