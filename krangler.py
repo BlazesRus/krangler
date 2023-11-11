@@ -282,15 +282,15 @@ class TreeStorage:
         if(fileData!={}):
             self.generateNodeTree(fileData)
 
+    #rework nodeOutput later after getting scanning code done
     def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode):
-        if(parentNode.hasListInfo):
-            if(parentNode.nodeContent==''):
-                f.write('\"]= {}\n')
-            else:
-                f.write('\"]= {\n')
-                f.write(parentNode.nodeContent)
-                f.write('\n}')
-        elif(parentNode.hasSubNodes()):#{
+            # if(parentNode.nodeContent==''):
+                
+            # else:
+            #     f.write('\"]= {\n')
+            #     f.write(parentNode.nodeContent)
+            #     f.write('\n}')
+        if(parentNode.hasSubNodes()):#{
             f.write(parentNode.get_nodeLevel*' '+'['+parentNode.name+']= {')#[240]= { #skillTree ID is outputted at this level for first instance of this function if skillTree nodes
             actualSubNode:LuaSubNode;
             #separate variable to prevent needing to reduce level after exit for loop
@@ -306,13 +306,18 @@ class TreeStorage:
                     f.write((parentNode.get_nodeLevel+1)*' '+'}')
                 #}
                 else:
-                    f.write((parentNode.get_nodeLevel+1)*' '+'[')
                     actualSubNode = currentTopLevelNode.recursiveSubNodes[node]
-                    f.write(node.name)# ["name"]= at this level for first instance of this function if skillTree nodes
-                    f.write('\"]= ')
-                    self.recursiveNodeOutput(f, currentTopLevelNode, parentNode, nodeLevel+1)
+                    if(actualSubNode.isListInfo()):
+                        f.write(actualSubNode.nodeLevel*' '+node.name)
+                    else:
+                        f.write(actualSubNode.nodeLevel*' '+'[')
+                        f.write(node.name)# ["name"]= at this level for first instance of this function if skillTree nodes
+                        f.write('\"]= ')
+                        self.recursiveNodeOutput(f, currentTopLevelNode, parentNode, nodeLevel+1)
             #}
             f.write(parentNode.get_nodeLevel*' '+'}')
+        elif(parentNode.nodeContent==''):
+            f.write('\"]= {}\n')
         else:
             f.write(parentNode.get_nodeLevel*' '+'['+parentNode.name+']= '+parentNode.nodeContent)
 
