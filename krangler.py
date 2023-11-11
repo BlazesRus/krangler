@@ -142,7 +142,7 @@ class LuaNode(object):
         #parentKey+_+name
         nodePostfix:str = '{'+str(len(parentSubnode.subnodes))
         topLevelKey:str = parentSubnode.topLevelKey+'_'+nodePostfix
-        self.recursiveSubNodes[nodeKey] = LuaSubNode(parentSubnode.topLevelKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
         #Making sure subnode gets child added
         parentSubnode.subnodes[topLevelKey] = '{'
         return topLevelKey
@@ -162,7 +162,7 @@ class LuaNode(object):
         #parentKey+_+name
         nodePostfix:str = '{'+str(len(parentSubnode.subnodes))
         topLevelKey:str = parentSubnode.topLevelKey+'_'+nodePostfix
-        self.recursiveSubNodes[nodeKey] = LuaSubNode(parentSubnodeKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnodeKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
         #Making sure subnode gets child added(directly using value reference to make sure doesn't edit a copy of node)
         self.recursiveSubNodes[parentSubnodeKey].subnodes[topLevelKey] = '{'
         return topLevelKey
