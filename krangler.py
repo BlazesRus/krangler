@@ -125,6 +125,19 @@ class LuaSubNode(object):
         self.subnodes[topLevelKey] = value
         #Handling the topLevelNode changes inside topLevelFunction (topLevel[topLevelKey])
         return topLevelKey
+    
+    def NodeOutputFromTopLevel(self, f:TextIOWrapper, currentTopLevelNode:LuaNode):
+        if(self.isListInfo()):
+            f.write(' '*8+self.name)
+        else:
+            f.write(' '*8+'[')
+            f.write(self.name)#[240]= { #skillTree ID is outputted at this level
+            f.write('\"]= {')
+            self.recursiveNodeOutput(f, currentTopLevelNode, self)
+            f.write(' '*8+'}')
+
+    def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentSubnode:LuaSubNode):
+        print('placeholder')
 
 class LuaNode(object):
     __slots__ = ["name", "nodeContent", "subnodes", "recursiveSubNodes"]
@@ -182,25 +195,6 @@ class LuaNode(object):
         topLevelKey:str = parentSubnode.add_ListNodeToSubnode(value)
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, value, parentSubnode.nodeLevel+1, topLevelKey)
         return topLevelKey
-
-    # def add_SubNodeToSubnodeFromKey(self, name:str, parentSubnodeKey:str):
-    #     parentSubnode:LuaSubNode = self.recursiveSubNodes[parentSubnodeKey]
-    #     #parentKey+_+name
-    #     nodeKey:str = parentSubnode.topLevelKey+'_'+name
-    #     self.recursiveSubNodes[nodeKey] = LuaSubNode(parentSubnodeKey, name, parentSubnode.nodeLevel+1, nodeKey)
-    #     #Making sure subnode gets child added
-    #     self.recursiveSubNodes[parentSubnodeKey].subnodes[nodeKey] = name
-    #     return nodeKey
-    
-    # #Adding to subnode using key info
-    # def add_GroupNodeToSubnodeFromKey(self, parentSubnodeKey:str):
-    #     parentSubnode:LuaSubNode = self.recursiveSubNodes[parentSubnodeKey]
-    #     #parentKey+_+name
-    #     topLevelKey:str = parentSubnode.topLevelKey+'_'+'{'+str(len(parentSubnode.subnodes))
-    #     self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnodeKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
-    #     #Making sure subnode gets child added(directly using value reference to make sure doesn't edit a copy of node)
-    #     self.recursiveSubNodes[parentSubnodeKey].subnodes[topLevelKey] = '{'
-    #     return topLevelKey
         
     # '"isMastery"' in nodeData.subnodes:
     def isMasteryNode(self, skillNode:LuaSubNode):
@@ -282,44 +276,44 @@ class TreeStorage:
         if(fileData!={}):
             self.generateNodeTree(fileData)
 
-    #rework nodeOutput later after getting scanning code done
-    def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode):
-            # if(parentNode.nodeContent==''):
+    # #rework nodeOutput later after getting scanning code done
+    # def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode):
+    #         # if(parentNode.nodeContent==''):
                 
-            # else:
-            #     f.write('\"]= {\n')
-            #     f.write(parentNode.nodeContent)
-            #     f.write('\n}')
-        if(parentNode.hasSubNodes()):#{
-            f.write(parentNode.get_nodeLevel*' '+'['+parentNode.name+']= {')#[240]= { #skillTree ID is outputted at this level for first instance of this function if skillTree nodes
-            actualSubNode:LuaSubNode;
-            #separate variable to prevent needing to reduce level after exit for loop
-            nodeLevel:int = parentNode.get_nodeLevel
-            for i, node in enumerate(parentNode.subnodes):
-            #{#Need to retrieve actual subNode info from topLevelNode
-                if i:#Every element but the first element in list
-                    f.write(',\n')
-                if(node.name=='{'):#{
-                    #for use for subobject of ["masteryEffects"] node for {} grouping for effects
-                    f.write((parentNode.get_nodeLevel+1)*' '+'{')
-                    self.recursiveNodeOutput(f, currentTopLevelNode, parentNode)
-                    f.write((parentNode.get_nodeLevel+1)*' '+'}')
-                #}
-                else:
-                    actualSubNode = currentTopLevelNode.recursiveSubNodes[node]
-                    if(actualSubNode.isListInfo()):
-                        f.write(actualSubNode.nodeLevel*' '+node.name)
-                    else:
-                        f.write(actualSubNode.nodeLevel*' '+'[')
-                        f.write(node.name)# ["name"]= at this level for first instance of this function if skillTree nodes
-                        f.write('\"]= ')
-                        self.recursiveNodeOutput(f, currentTopLevelNode, parentNode, nodeLevel+1)
-            #}
-            f.write(parentNode.get_nodeLevel*' '+'}')
-        elif(parentNode.nodeContent==''):
-            f.write('\"]= {}\n')
-        else:
-            f.write(parentNode.get_nodeLevel*' '+'['+parentNode.name+']= '+parentNode.nodeContent)
+    #         # else:
+    #         #     f.write('\"]= {\n')
+    #         #     f.write(parentNode.nodeContent)
+    #         #     f.write('\n}')
+    #     if(parentNode.hasSubNodes()):#{
+    #         f.write(parentNode.get_nodeLevel*' '+'['+parentNode.name+']= {')#[240]= { #skillTree ID is outputted at this level for first instance of this function if skillTree nodes
+    #         actualSubNode:LuaSubNode;
+    #         #separate variable to prevent needing to reduce level after exit for loop
+    #         nodeLevel:int = parentNode.get_nodeLevel
+    #         for i, node in enumerate(parentNode.subnodes):
+    #         #{#Need to retrieve actual subNode info from topLevelNode
+    #             if i:#Every element but the first element in list
+    #                 f.write(',\n')
+    #             if(node.name=='{'):#{
+    #                 #for use for subobject of ["masteryEffects"] node for {} grouping for effects
+    #                 f.write((parentNode.get_nodeLevel+1)*' '+'{')
+    #                 self.recursiveNodeOutput(f, currentTopLevelNode, parentNode)
+    #                 f.write((parentNode.get_nodeLevel+1)*' '+'}')
+    #             #}
+    #             else:
+    #                 actualSubNode = currentTopLevelNode.recursiveSubNodes[node]
+    #                 if(actualSubNode.isListInfo()):
+    #                     f.write(actualSubNode.nodeLevel*' '+node.name)
+    #                 else:
+    #                     f.write(actualSubNode.nodeLevel*' '+'[')
+    #                     f.write(node.name)# ["name"]= at this level for first instance of this function if skillTree nodes
+    #                     f.write('\"]= ')
+    #                     self.recursiveNodeOutput(f, currentTopLevelNode, parentNode, nodeLevel+1)
+    #         #}
+    #         f.write(parentNode.get_nodeLevel*' '+'}')
+    #     elif(parentNode.nodeContent==''):
+    #         f.write('\"]= {}\n')
+    #     else:
+    #         f.write(parentNode.get_nodeLevel*' '+'['+parentNode.name+']= '+parentNode.nodeContent)
 
     def reconstructAndSave_Tree(self, outputDirectory, fname='tree.lua'):
         fullPath:str
@@ -334,37 +328,24 @@ class TreeStorage:
                 f.write(' '*4+'[\"')
                 f.write(topLevelNode.name)#outputs ["nodes"]= { at this level
                 f.write('\"]= ')
-                if topLevelNode.hasListInfo:#["imageZoomLevels"] has information at this level
-                    f.write('{')
-                    for i, subNode in enumerate(self[topLevelNode].subnodes):
-                    #{
-                        if i:#Every element but the first element in list
-                            f.write(',\n')
-                        #f.write(' '*4+subNode.)
-                    #}
-                elif topLevelNode.hasSubNodes()==False:
+                # if topLevelNode.hasListInfo:#["imageZoomLevels"] has information at this level
+                #     f.write('{')
+                #     for i, subNode in enumerate(self[topLevelNode].subnodes):
+                #     #{
+                #         if i:#Every element but the first element in list
+                #             f.write(',\n')
+                #         #f.write(' '*4+subNode.)
+                #     #}
+                if topLevelNode.hasSubNodes()==False:
                     f.write(topLevelNode.nodeContent)
                     f.write(',\n')
                 else:#if(topLevelNode.hasSubNodes()):
+                    f.write('{\n')
                     for i, subNode in enumerate(self[topLevelNode].subnodes):
                     #{
                         if i:#Every element but the first element in list
                             f.write(',\n')
-                        f.write('        [')
-                        f.write(subNode.name)#[240]= { #skillTree ID is outputted at this level
-                        f.write('\"]= ')
-                        if(subNode.hasListInfo):#{
-                            if(subNode.nodeContent==''):
-                                f.write('\"]= {},\n')
-                            else:
-                                f.write('\"]= {\n')
-                                f.write(subNode.nodeContent)
-                                f.write('\n        },n')
-                        #}
-                        elif topLevelNode.hasSubNodes()==False:
-                            print('Placeholder')
-                        else:
-                            self.recursiveNodeOutput(f, self[topLevelNode].subnodes, skillTreeNode)
+                        subNode.NodeOutputFromTopLevel(self)
                     #}
             #}
             f.write('}')
