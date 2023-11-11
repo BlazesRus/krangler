@@ -524,7 +524,8 @@ class TreeStorage:
             print('Error:Nodes group doesn\'t exist inside file')
 
     def printDebugInfo(self):
-        print("Listing top level nodes and information about each skill node detected")
+        print("Total of "+str(len(self.topLevel))+' top level nodes detected.\n')
+        print("Listing top level nodes and information about each skill node detected:\n")
         for topLevelNodeKey, topLevelNodeData in self.topLevel.items():
             topLevelNodeData.printDebugInfo(topLevelNodeKey)
         
