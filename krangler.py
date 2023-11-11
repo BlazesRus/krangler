@@ -127,8 +127,12 @@ class LuaSubNode(object):
         return topLevelKey
     
     def NodeOutputFromTopLevel(self, f:TextIOWrapper, currentTopLevelNode:LuaNode):
-        if(self.isListInfo()):
+        if(self.nodeContent==''):#isListInfo
             f.write(' '*8+self.name)
+        elif(self.name=='{'):#Grouping node
+            f.write(' '*8+'{')
+            self.recursiveNodeOutput(f, currentTopLevelNode, self)
+            f.write(' '*8+'}')
         else:
             f.write(' '*8+'[')
             f.write(self.name)#[240]= { #skillTree ID is outputted at this level
