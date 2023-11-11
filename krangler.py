@@ -66,40 +66,40 @@ class LuaSubNode(object):
         
     def printDebugInfo(self, subnodekeyName:str=''):
         if subnodekeyName =='':
-            print('Subnode node named '+self.name+' content:\n')
+            print(' '*8+'Subnode node named '+self.name+' content:\n')
         else:
-            print('Subnode node named '+self.name+' (keyname:'+subnodekeyName+')content:\n')
-        print(" has "+str(len(self.subnodes))+' subnodes.\n')
+            print(' '*8+'Subnode node named '+self.name+' (keyname:'+subnodekeyName+')content:\n')
+        print(' '*8+"Subnode has "+str(len(self.subnodes))+' subnodes.\n')
         for nodeKey, nodeData in self.subnodes.items():
-            print('Detected subnode '+nodeKey+" with name of "+nodeData.name+'.\n')
-            print(" has "+str(len(nodeData.subnodes))+' subnodes.\n')
+            print(' '*12+'Detected child subnode '+nodeKey+" with name of "+nodeData.name+'.\n')
+            print(' '*12+"Child subnode has "+str(len(nodeData.subnodes))+' subnodes.\n')
             if nodeKey=='\"nodes\"':
                 hasIcon:bool = False
                 isPossibleNormalNode:bool = True
                 for subData in nodeData.subnodes.values:
                     if subData=='"isNotable"':
-                        print('Notable node with id '+nodeKey+' is stored.\n')
+                        print(' '*12+'Notable node with id '+nodeKey+' is stored.\n')
                         isPossibleNormalNode = False
                         break
                     elif subData=='"isMastery"':
-                        print('Nullifying mastery node with id '+nodeKey+' is stored.\n')
+                        print(' '*12+'Nullifying mastery node with id '+nodeKey+' is stored.\n')
                         isPossibleNormalNode = False
                         break
                     elif subData=='"ascendancyName"':
-                        print('Ascendancy node with id '+nodeKey+' is stored.\n')
+                        print(' '*12+'Ascendancy node with id '+nodeKey+' is stored.\n')
                         isPossibleNormalNode = False
                         break
                     elif subData=='\"isJewelSocket\"':
-                        print('Jewel node with id '+nodeKey+' is stored.\n')
+                        print(' '*12+'Jewel node with id '+nodeKey+' is stored.\n')
                         isPossibleNormalNode = False
                         break
                     elif subData=='\"icon\"':
                         hasIcon = True
                         break
                 if(isPossibleNormalNode and hasIcon):
-                    print('Normal skill node with id '+nodeKey+' is stored.\n')
+                    print(' '*12+'Normal skill node with id '+nodeKey+' is stored.\n')
                 elif(isPossibleNormalNode):
-                    print('Node with id '+nodeKey+' is stored.\n')
+                    print(' '*12+'Node with id '+nodeKey+' is stored.\n')
 
     def add_SubNodeToSubnode(self, name:str):
         #parentsubNode is self.recursiveSubNodes[parentSubnodeKey]
@@ -202,10 +202,10 @@ class LuaNode(object):
 
     def printDebugInfo(self, topLevelkeyName:str=''):
         if topLevelkeyName =='':
-            print('TopLevel node named '+self.name+'content:\n')
+            print(' '*4+'TopLevel node named '+self.name+'content:\n')
         else:
-            print('TopLevel node named '+self.name+' (keyname:'+topLevelkeyName+')content:\n')
-        print(" has "+str(len(self.subnodes))+' subnodes with those subnodes having a total of '+str(len(self.recursiveSubNodes))+'.\n')
+            print(' '*4+'TopLevel node named '+self.name+' (keyname:'+topLevelkeyName+')content:\n')
+        print(' '*4+'has '+str(len(self.subnodes))+' subnodes with those subnodes having a total of '+str(len(self.recursiveSubNodes))+'.\n')
         for nodeKey, nodeData in self.subnodes.items():
             nodeData.printDebugInfo(nodeKey)
 
