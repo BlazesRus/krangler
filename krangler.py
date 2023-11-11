@@ -140,11 +140,12 @@ class LuaNode(object):
     def add_GroupNodeToSubnode(self, parentSubnode:LuaSubNode):
         #parentsubNode is self.recursiveSubNodes[parentSubnodeKey]
         #parentKey+_+name
-        nodeKey:str = '{'+str(len(parentSubnode.subnodes))
-        self.recursiveSubNodes[nodeKey] = LuaSubNode(parentSubnode.topLevelKey, '{', parentSubnode.nodeLevel+1, nodeKey)
+        nodePostfix:str = '{'+str(len(parentSubnode.subnodes))
+        topLevelKey:str = parentSubnode.topLevelKey+'_'+nodePostfix
+        self.recursiveSubNodes[nodeKey] = LuaSubNode(parentSubnode.topLevelKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
         #Making sure subnode gets child added
-        parentSubnode.subnodes[nodeKey] = '{'
-        return nodeKey
+        parentSubnode.subnodes[topLevelKey] = '{'
+        return topLevelKey
 
     def add_SubNodeToSubnodeFromKey(self, name:str, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.recursiveSubNodes[parentSubnodeKey]
@@ -159,11 +160,12 @@ class LuaNode(object):
     def add_GroupNodeToSubnodeFromKey(self, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.recursiveSubNodes[parentSubnodeKey]
         #parentKey+_+name
-        nodeKey:str = '{'+str(len(parentSubnode.subnodes))
-        self.recursiveSubNodes[nodeKey] = LuaSubNode(parentSubnodeKey, '{', parentSubnode.nodeLevel+1, nodeKey)
+        nodePostfix:str = '{'+str(len(parentSubnode.subnodes))
+        topLevelKey:str = parentSubnode.topLevelKey+'_'+nodePostfix
+        self.recursiveSubNodes[nodeKey] = LuaSubNode(parentSubnodeKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
         #Making sure subnode gets child added(directly using value reference to make sure doesn't edit a copy of node)
-        self.recursiveSubNodes[parentSubnodeKey].subnodes[nodeKey] = '{'
-        return nodeKey
+        self.recursiveSubNodes[parentSubnodeKey].subnodes[topLevelKey] = '{'
+        return topLevelKey
         
     # '"isMastery"' in nodeData.subnodes:
     def isMasteryNode(self, skillNode:LuaSubNode):
@@ -344,6 +346,9 @@ class TreeStorage:
             ScanningInfo.set_scanLevel('[')
         elif ScanningInfo.scanLevel=='[':
             if lineChar==']':
+                # if(keyPosition[-1] not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
+                #     print(keyPosition[-1]+' not detected within '+ScanningInfo.topLevelKey+'\'s recursive subnode storage.\n')
+                #     return -1#force early exit on error(-1 breaks the loop)
                 subNodeKey:str = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])#Add node to Tree
                 if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
                     print("Failed to add subnode:'+subNodeKey+' to Tree at indentation level "+str(indentationLevel))
@@ -429,7 +434,7 @@ class TreeStorage:
                             #classes subgroup has {} as subgroups for class information such as for ascendancies
                             elif ScanningInfo.scanLevel=='{' and lineChar=='{':
                                 ScanningInfo.set_scanLevel('classinfo')
-                                currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeFromTopLevel(ScanningInfo.topLevelKey)
+                                currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeFromTopLevel()
                                 if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].subnodes):
                                     print("Failed to add grouping subnode:'+currentNodeKey+' to Tree")
                                 keyPosition.append(currentNodeKey)
@@ -466,7 +471,10 @@ class TreeStorage:
                             indentationLevel  = self.recursivelyLoadNodeInput(lineChar, ScanningInfo, keyPosition, indentationLevel)
                     #}
             #}
+            # if indentationLevel==-1:#forcing early end to loop because of error
+            #     break;
         #}
+        
         print('Finished loading lua file into node tree.  '+str(lineNumber)+" lines total scanned.\n")
 
     def nullify_mastery_node(self, nodeKeyID:str):
