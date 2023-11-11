@@ -9,7 +9,7 @@ import os
 import platform
 import pathlib
 
-class LuaSubNode:
+class LuaSubNode(object):
     __slots__ = ["parentKey", "name", "nodeLevel", "topLevelKey", "subnodes", "hasListInfo", "nodeContent"]
     def __init__(self, parentKey:str, name, nodeLevel, topLevelKey):
         #Can detect if parent is from topLevel by lack of _ character in name
@@ -20,7 +20,7 @@ class LuaSubNode:
         #  If name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)  
         #  use name[1,-1] to extract information about index
         self.topLevelKey = topLevelKey
-        self.hasListInfo = hasListInfo
+        self.hasListInfo = False
         self.nodeContent:str = ''
         #Actual subnodes stored inside the parent LuaNode (key refers to topLevelKey, value refers to name)
         self.subnodes:dict[str,str]={}
@@ -60,7 +60,7 @@ class LuaSubNode:
                 stringBuffer += lineChar
         return position
         
-class LuaNode:
+class LuaNode(object):
     __slots__ = ["name", "nodeContent", "subnodes", "recursiveSubNodes"]
     def __init__(self, name:str):
         self.name = name
