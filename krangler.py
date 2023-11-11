@@ -145,7 +145,7 @@ class LuaNode(object):
         return topLevelKey;
 
     def add_GroupNodeFromTopLevel(self):
-        nodeKey:str = '{'+str(len(self.subnodes))
+        nodeKey:str = self.name+'_'+'{'+str(len(self.subnodes))
         self.subnodes[nodeKey] = LuaSubNode(self.name, '{', 2, nodeKey)
         return nodeKey;
     
@@ -174,8 +174,7 @@ class LuaNode(object):
     def add_GroupNodeToSubnodeFromKey(self, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.recursiveSubNodes[parentSubnodeKey]
         #parentKey+_+name
-        nodePostfix:str = '{'+str(len(parentSubnode.subnodes))
-        topLevelKey:str = parentSubnode.topLevelKey+'_'+nodePostfix
+        topLevelKey:str = parentSubnode.topLevelKey+'_'+'{'+str(len(parentSubnode.subnodes))
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnodeKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
         #Making sure subnode gets child added(directly using value reference to make sure doesn't edit a copy of node)
         self.recursiveSubNodes[parentSubnodeKey].subnodes[topLevelKey] = '{'
