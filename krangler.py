@@ -132,6 +132,9 @@ class LuaNode(object):
     def get_name(self):
         return self.name
     
+    def set_nodeContent(self, value:str):
+        self.nodeContent = value
+
     def hasSubNodes(self):
         return len(self.subnodes)!=0
 
@@ -398,7 +401,7 @@ class TreeStorage:
 
         #Indentation level for topLevel nodes are at 1 indentation, actual data for nodes starts at 2 indentation
         #Might remove and just check size of keyPosition
-        indentationLevel = 2;
+        indentationLevel = 1;
         
         #scanLevel:str = ''
         #scanBuffer = ''
@@ -425,19 +428,22 @@ class TreeStorage:
                             ScanningInfo.set_scanLevel('insideTopLevelNodeName')
                             ScanningInfo.reset_scanBuffer()
                         elif lineChar==']':#["nodes"]= created at this point
-                            if ',' in line:
-                                self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.scanBuffer)
-                            else:
-                                ScanningInfo.topLevelKey = ScanningInfo.scanBuffer
-                                self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey)
-                            if(ScanningInfo.topLevelKey not in self.topLevel):
-                                print("Failed to add topLevelNode:'+ScanningInfo.topLevelKey+' to Tree")
+                            ScanningInfo.topLevelKey = ScanningInfo.scanBuffer
+                            self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey)
+                            if ',' not in line:
+                                indentationLevel = 2
                             ScanningInfo.reset_scans()
                         elif ScanningInfo.scanLevel=='insideTopLevelNodeName':
                             ScanningInfo.append_Buffer(lineChar);
                     #}
                     else:#{
-                        if indentationLevel==2:#Scanning for NodeId now (node added to subnodes once scanned)
+                        if indentationLevel==1:#Scanning top level tag content
+                            if lineChar==',':
+                                self.topLevel[ScanningInfo.topLevelKey].set_nodeContent(ScanningInfo.scanBuffer)
+                                ScanningInfo.topLevelKey = ''
+                            elif lineChar!='=':
+                                ScanningInfo.scanBuffer += lineChar
+                        elif indentationLevel==2:#Scanning for NodeId now (node added to subnodes once scanned)
                             if ScanningInfo.scanLevel=='':
                                 if lineChar=='{':
                                     ScanningInfo.set_scanLevel('{')
@@ -487,7 +493,6 @@ class TreeStorage:
             if indentationLevel==-1:#forcing early end to loop because of error
                 break;
         #}
-        
         print('Finished loading lua file into node tree.  '+str(lineNumber)+" lines total scanned.\n")
 
     def nullify_mastery_node(self, nodeKeyID:str):

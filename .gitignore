@@ -24,3 +24,5 @@ OtherVersions/kranglerPreslotsOptimization.py
 OtherVersions/kranglerAddViaKey.py
 
 .vs/krangler/v17/.suo
+
+Debug/tree.lua

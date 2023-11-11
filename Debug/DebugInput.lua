@@ -446,4 +446,5 @@
     ["points"]= {
         ["totalPoints"]= 123,
         ["ascendancyPoints"]= 8
-    }}
+    }
+}
