@@ -19,14 +19,14 @@ class LuaSubNode(object):
         #Can detect if parent is from topLevel by lack of _ character in name
         self.parentKey:str = parentKey
         #if name is '{', then node is a grouping node that stores other nodes inside {}
-        #if nodeContent is empty, then treat name as tagContent value
+        #if name is empty, then treat nodeContent element in lsit
         self.name = name
         #Keynames based on (parent's topLevelKey or subnode's name if parent is in LuaNode)+_+name (can't use lists as key so using string instead)
         #  If name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)  
         #  use name[1,-1] to extract information about index
         self.topLevelKey = topLevelKey
         self.nodeContent:str = ''
-        #Actual subnodes stored inside the parent LuaNode (key refers to topLevelKey, value refers to name)
+        #Actual subnodes stored inside the parent LuaNode (key refers to topLevelKey, value refers to name or element value in case of list element)
         self.subnodes:dict[str,str]={}
         #if nodeLevel == 2, then parent is one of LuaNodes (iteration level is equal to this)
         self.nodeLevel:int = nodeLevel
@@ -40,8 +40,11 @@ class LuaSubNode(object):
     def get_topLevelKey(self):
         return self.topLevelKey
 
+    def set_nodeContent(self, value:str):
+        self.nodeContent = value
+
     def isListInfo(self):
-        return self.nodeContent==''
+        return self.name==''
 
     def hasSubNodes(self):
         return len(self.subnodes)!=0
@@ -119,7 +122,7 @@ class LuaSubNode(object):
         return topLevelKey
 
     def add_ListNodeToSubnode(self, value:str):
-        #parentKey+_+name
+        #parentKey+_+indexFromParent
         topLevelKey:str = self.topLevelKey+'_'+str(len(self.subnodes))
         #Making sure subnode gets child added
         self.subnodes[topLevelKey] = value
@@ -179,7 +182,8 @@ class LuaNode(object):
 
     def add_ListNodeFromTopLevel(self, value:str):
         nodeKey:str = self.name+'_'+str(len(self.subnodes))
-        self.subnodes[nodeKey] = LuaSubNode(self.name, value, 2, nodeKey)
+        self.subnodes[nodeKey] = LuaSubNode(self.name, '', 2, nodeKey)
+        self.subnodes[nodeKey].nodeContent = value
         return nodeKey;
     
     def add_SubNodeToSubnode(self, name:str, parentSubnode:LuaSubNode):
@@ -197,7 +201,8 @@ class LuaNode(object):
     def add_ListNodeToSubnode(self, value:str, parentSubnode:LuaSubNode):
         #parentKey+_+name
         topLevelKey:str = parentSubnode.add_ListNodeToSubnode(value)
-        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, value, parentSubnode.nodeLevel+1, topLevelKey)
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, '', parentSubnode.nodeLevel+1, topLevelKey)
+        self.recursiveSubNodes[topLevelKey].set_nodeContent(value)
         return topLevelKey
         
     # '"isMastery"' in nodeData.subnodes:
@@ -279,45 +284,6 @@ class TreeStorage:
         self.topLevel:dict[str, LuaNode] = {}
         if(fileData!={}):
             self.generateNodeTree(fileData)
-
-    # #rework nodeOutput later after getting scanning code done
-    # def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentNode:LuaSubNode):
-    #         # if(parentNode.nodeContent==''):
-                
-    #         # else:
-    #         #     f.write('\"]= {\n')
-    #         #     f.write(parentNode.nodeContent)
-    #         #     f.write('\n}')
-    #     if(parentNode.hasSubNodes()):#{
-    #         f.write(parentNode.get_nodeLevel*' '+'['+parentNode.name+']= {')#[240]= { #skillTree ID is outputted at this level for first instance of this function if skillTree nodes
-    #         actualSubNode:LuaSubNode;
-    #         #separate variable to prevent needing to reduce level after exit for loop
-    #         nodeLevel:int = parentNode.get_nodeLevel
-    #         for i, node in enumerate(parentNode.subnodes):
-    #         #{#Need to retrieve actual subNode info from topLevelNode
-    #             if i:#Every element but the first element in list
-    #                 f.write(',\n')
-    #             if(node.name=='{'):#{
-    #                 #for use for subobject of ["masteryEffects"] node for {} grouping for effects
-    #                 f.write((parentNode.get_nodeLevel+1)*' '+'{')
-    #                 self.recursiveNodeOutput(f, currentTopLevelNode, parentNode)
-    #                 f.write((parentNode.get_nodeLevel+1)*' '+'}')
-    #             #}
-    #             else:
-    #                 actualSubNode = currentTopLevelNode.recursiveSubNodes[node]
-    #                 if(actualSubNode.isListInfo()):
-    #                     f.write(actualSubNode.nodeLevel*' '+node.name)
-    #                 else:
-    #                     f.write(actualSubNode.nodeLevel*' '+'[')
-    #                     f.write(node.name)# ["name"]= at this level for first instance of this function if skillTree nodes
-    #                     f.write('\"]= ')
-    #                     self.recursiveNodeOutput(f, currentTopLevelNode, parentNode, nodeLevel+1)
-    #         #}
-    #         f.write(parentNode.get_nodeLevel*' '+'}')
-    #     elif(parentNode.nodeContent==''):
-    #         f.write('\"]= {}\n')
-    #     else:
-    #         f.write(parentNode.get_nodeLevel*' '+'['+parentNode.name+']= '+parentNode.nodeContent)
 
     def reconstructAndSave_Tree(self, outputDirectory, fname='tree.lua'):
         fullPath:str
