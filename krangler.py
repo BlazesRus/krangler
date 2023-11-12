@@ -130,21 +130,64 @@ class LuaSubNode(object):
         return topLevelKey
     
     def NodeOutputFromTopLevel(self, f:TextIOWrapper, currentTopLevelNode:LuaNode):
-        if(self.nodeContent==''):#isListInfo
-            f.write(' '*8+self.name)
-        elif(self.name=='{'):#Grouping node
-            f.write(' '*8+'{')
+        indentation:str = ' '*8
+        if(self.name=='{'):#Grouping node
+            f.write(indentation+'{')
             self.recursiveNodeOutput(f, currentTopLevelNode, self)
-            f.write(' '*8+'}')
+            f.write(indentation+'}')
+        elif(len(self.subnodes)==0):
+            if(self.name==''):#isListInfo
+                f.write(indentation+self.name)
+            elif(self.nodeContent!=''):
+                f.write(indentation+'[')
+                f.write(self.name)#[240]= { #skillTree ID is outputted at this level
+                f.write('\"]= '+self.nodeContent)
+            else:
+                f.write(indentation+'[')
+                f.write(self.name)#[240]= { #skillTree ID is outputted at this level
+                f.write('\"]= {}')
         else:
-            f.write(' '*8+'[')
+            f.write(indentation+'[')
             f.write(self.name)#[240]= { #skillTree ID is outputted at this level
             f.write('\"]= {')
-            self.recursiveNodeOutput(f, currentTopLevelNode, self)
+            for i, subNodeKey in enumerate(self.subnodes.keys()):
+            #{
+                subNode = currentTopLevelNode.recursiveSubNodes[subNodeKey]
+                if i:#Every element but the first element in list
+                    f.write(',\n')
+                subNode.recursiveNodeOutput(f, currentTopLevelNode, self)
+            #}
             f.write(' '*8+'}')
 
     def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentSubnode:LuaSubNode):
-        print('placeholder')
+        indentation:str = ' '*4*self.nodeLevel
+        if(self.name=='{'):#Grouping node
+            f.write(indentation+'{')
+            self.recursiveNodeOutput(f, currentTopLevelNode, self)
+            f.write(indentation+'}')
+        elif(len(self.subnodes)==0):
+            if(self.name==''):#isListInfo
+                f.write(indentation+self.name)
+            elif(self.nodeContent!=''):
+                f.write(indentation+'[')
+                f.write(self.name)#[240]= { #skillTree ID is outputted at this level
+                f.write('\"]= '+self.nodeContent)
+            else:
+                f.write(indentation+'[')
+                f.write(self.name)#[240]= { #skillTree ID is outputted at this level
+                f.write('\"]= {}')
+        else:
+            f.write(indentation+'[')
+            f.write(self.name)#[240]= { #skillTree ID is outputted at this level
+            f.write('\"]= {')
+            for i, subNodeKey in enumerate(self.subnodes.keys()):
+            #{
+                subNode = currentTopLevelNode.recursiveSubNodes[subNodeKey]
+                if i:#Every element but the first element in list
+                    f.write(',\n')
+                subNode.recursiveNodeOutput(f, currentTopLevelNode, self)
+            #}
+            f.write(' '*8+'}')
 
 class LuaNode(object):
     __slots__ = ["name", "nodeContent", "subnodes", "recursiveSubNodes"]
