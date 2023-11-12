@@ -346,11 +346,11 @@ class TreeStorage:
                     f.write(',\n')
                 else:#if(topLevelNode.hasSubNodes()):
                     f.write('{\n')
-                    for i, subNode in enumerate(self[topLevelNode].subnodes):
+                    for i, (subKey, subNode) in enumerate(topLevelNode.subnodes.items()):
                     #{
                         if i:#Every element but the first element in list
                             f.write(',\n')
-                        subNode.NodeOutputFromTopLevel(self)
+                        subNode.NodeOutputFromTopLevel(f, topLevelNode)
                     #}
             #}
             f.write('}')
