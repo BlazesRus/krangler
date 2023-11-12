@@ -411,6 +411,15 @@ class TreeStorage:
                 keyPosition.pop();#removing last position data
             else:
                 ScanningInfo.append_Buffer(lineChar);
+        elif ScanningInfo.scanLevel=='listInfo':
+            if lineChar==',' or lineChar=='\n':
+                subNodeKey:str = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])
+                ScanningInfo.reset_scans()
+            else:
+                ScanningInfo.scanBuffer += lineChar
+        elif lineChar!=' ' and lineChar=='\n':
+            ScanningInfo.set_scanLevel('listInfo')
+            ScanningInfo.set_scanBuffer(lineChar)
         return indentationLevel#making sure to pass values back to main function
 
     def generateNodeTree(self, fileData:list[str]):
@@ -509,6 +518,12 @@ class TreeStorage:
                                     self.topLevel[ScanningInfo.topLevelKey].subnodes[ScanningInfo['currentNodeKey']].nodeContent = ScanningInfo.scanBuffer
                                 else:
                                     ScanningInfo.append_Buffer(lineChar);
+                            elif ScanningInfo.scanLevel=='listInfo':
+                                if lineChar==',' or lineChar=='\n':
+                                    currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeFromTopLevel(ScanningInfo.scanBuffer, ScanningInfo.topLevelKey)
+                                    ScanningInfo.reset_scans()
+                                else:
+                                    ScanningInfo.scanBuffer += lineChar
                             elif lineChar!=' ' and lineChar=='\n':
                                 ScanningInfo.set_scanLevel('listInfo')
                                 ScanningInfo.set_scanBuffer(lineChar)
