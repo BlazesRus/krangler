@@ -279,10 +279,10 @@ class LuaNode(object):
 
 class ScanInfo:
     __slots__ = ["scanLevel", "scanBuffer", "topLevelKey"]
-    def __init__(self, scanLevel, scanBuffer, topLevelKey):
-        self.scanLevel = scanLevel
-        self.scanBuffer = scanBuffer
-        self.topLevelKey = topLevelKey
+    def __init__(self):
+        self.scanLevel = ''
+        self.scanBuffer = ''
+        self.topLevelKey = ''
         
     def get_scanLevel(self):
         return self.scanLevel
@@ -303,7 +303,7 @@ class ScanInfo:
         self.scanBuffer += value
 
     def set_topLevelKey(self, value:str):
-        self.set_topLevelKey = value
+        self.topLevelKey = value
 
     def reset_scanLevel(self):
         self.scanLevel = ''
@@ -316,7 +316,7 @@ class ScanInfo:
         self.scanLevel = ''
 
     def reset_topLevelKey(self):
-        self.set_topLevelKey = ''
+        self.topLevelKey = ''
  
 class TreeStorage:
     __slots__ = ["RootStart", "topLevel"]
@@ -440,7 +440,7 @@ class TreeStorage:
         #scanBuffer = ''
         #topLevelKey = ''
         #Making use of python's object references to treat variable information as pass-by-reference equivalent
-        ScanningInfo:ScanInfo = ScanInfo('','','')
+        ScanningInfo:ScanInfo = ScanInfo()
 
         for line in fileData:#{
             lineNumber += 1;
@@ -499,7 +499,7 @@ class TreeStorage:
                                 if lineChar==']':
                                     currentNodeName = ScanningInfo.scanBuffer
                                     ScanningInfo.reset_scanBuffer()
-                                    currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeFromTopLevel(currentNodeName, ScanningInfo.topLevelKey)#Add node to Tree (SkillNodeID created here)
+                                    currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeFromTopLevel(currentNodeName)#Add node to Tree (SkillNodeID created here)
                                     if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].subnodes):
                                         print("Failed to add subnode:'+currentNodeKey+' to Tree")
                                     ScanningInfo.set_scanLevel('nextOrContent')#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
@@ -520,7 +520,7 @@ class TreeStorage:
                                     ScanningInfo.append_Buffer(lineChar);
                             elif ScanningInfo.scanLevel=='listInfo':
                                 if lineChar==',' or lineChar=='\n':
-                                    currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeFromTopLevel(ScanningInfo.scanBuffer, ScanningInfo.topLevelKey)
+                                    currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeFromTopLevel(ScanningInfo.scanBuffer)
                                     ScanningInfo.reset_scans()
                                 else:
                                     ScanningInfo.scanBuffer += lineChar
