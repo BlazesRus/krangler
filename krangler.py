@@ -337,18 +337,10 @@ class TreeStorage:
     #   print('Saving edited tree to '+fullPath+'. \n')
         with open(fullPath,'w') as f:
             f.write(self.RootStart)
-            for topLevelNode in self.topLevel:#{
+            for topLevelKey,topLevelNode in self.topLevel.items():#{
                 f.write(' '*4+'[\"')
                 f.write(topLevelNode.name)#outputs ["nodes"]= { at this level
                 f.write('\"]= ')
-                # if topLevelNode.hasListInfo:#["imageZoomLevels"] has information at this level
-                #     f.write('{')
-                #     for i, subNode in enumerate(self[topLevelNode].subnodes):
-                #     #{
-                #         if i:#Every element but the first element in list
-                #             f.write(',\n')
-                #         #f.write(' '*4+subNode.)
-                #     #}
                 if topLevelNode.hasSubNodes()==False:
                     f.write(topLevelNode.nodeContent)
                     f.write(',\n')
@@ -414,6 +406,7 @@ class TreeStorage:
         elif ScanningInfo.scanLevel=='listInfo':
             if lineChar==',' or lineChar=='\n':
                 subNodeKey:str = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])
+                keyPosition.append(subNodeKey)
                 ScanningInfo.reset_scans()
             else:
                 ScanningInfo.scanBuffer += lineChar
@@ -482,6 +475,9 @@ class TreeStorage:
                                     ScanningInfo.set_scanLevel('{')
                                 elif lineChar=='}':#Exiting topLevelKey (ignoring the comma that might be after)
                                     ScanningInfo.reset_topLevelKey()
+                                    if(len(keyPosition)==0):
+                                        print('Error:Exiting indentation level without correct position saved in key position(Forcing early exit of scan)')
+                                        break
                                     keyPosition.pop();#removing last position data
                             #classes subgroup has {} as subgroups for class information such as for ascendancies
                             elif ScanningInfo.scanLevel=='{' and lineChar=='{':
@@ -503,6 +499,7 @@ class TreeStorage:
                                     if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].subnodes):
                                         print("Failed to add subnode:'+currentNodeKey+' to Tree")
                                     ScanningInfo.set_scanLevel('nextOrContent')#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
+                                    keyPosition.append(currentNodeKey)
                                 else:
                                     ScanningInfo.append_Buffer(lineChar)
                             elif ScanningInfo.scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
@@ -521,6 +518,7 @@ class TreeStorage:
                             elif ScanningInfo.scanLevel=='listInfo':
                                 if lineChar==',' or lineChar=='\n':
                                     currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeFromTopLevel(ScanningInfo.scanBuffer)
+                                    keyPosition.append(currentNodeKey)
                                     ScanningInfo.reset_scans()
                                 else:
                                     ScanningInfo.scanBuffer += lineChar
