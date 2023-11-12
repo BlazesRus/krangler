@@ -55,6 +55,26 @@ class LuaSubNode(object):
     def isParentTopLevel(self):
         return '_' not in self.parentKet
     
+    # '"isMastery"' in nodeData.subnodes:
+    def isMasteryNode(self):
+        return '"isMastery"' in self.subnodes.values()
+    
+    #'"ascendancyName"' in nodeData.subnodes:
+    def isAscendancyNode(self):
+        return '"ascendancyName"' in self.subnodes.values()
+    
+    def isNotableNode(self):
+        # '"isNotable"' in nodeData.subnodes:
+        return '"isNotable"' in self.subnodes.values()
+
+    def isJewelSocket(self):
+        # '"isJewelSocket"' in nodeData.subnodes:
+        return '"isJewelSocket"' in self.subnodes.values()
+    
+    def isNotJewelSocket(self):
+        # '"isJewelSocket"' not in nodeData.subnodes.:
+        return '"isJewelSocket"' not in self.subnodes.values()
+
     def nodePosition(self):
         #using _ separators for find node position inside tree
         position:list[str] = []
@@ -247,26 +267,6 @@ class LuaNode(object):
         self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, '', parentSubnode.nodeLevel+1, topLevelKey)
         self.recursiveSubNodes[topLevelKey].set_nodeContent(value)
         return topLevelKey
-        
-    # '"isMastery"' in nodeData.subnodes:
-    def isMasteryNode(self, skillNode:LuaSubNode):
-        return '"isMastery"' in skillNode.subnodes.values()
-    
-    #'"ascendancyName"' in nodeData.subnodes:
-    def isAscendancyNode(self, skillNode:LuaSubNode):
-        return '"ascendancyName"' in skillNode.subnodes.values()
-    
-    def isNotableNode(self, skillNode:LuaSubNode):
-        # '"isNotable"' in nodeData.subnodes:
-        return '"isNotable"' in skillNode.subnodes.values()
-
-    def isJewelSocket(self, skillNode:LuaSubNode):
-        # '"isJewelSocket"' in nodeData.subnodes:
-        return '"isJewelSocket"' in skillNode.subnodes.values()
-    
-    def isNotJewelSocket(self, skillNode:LuaSubNode):
-        # '"isJewelSocket"' not in nodeData.subnodes.:
-        return '"isJewelSocket"' not in skillNode.subnodes.values()
 
     def printDebugInfo(self, topLevelkeyName:str=''):
         if topLevelkeyName =='':
@@ -551,18 +551,18 @@ class TreeStorage:
 
     def nullifyAllSkillTreeNodes(self):
         if '\"nodes\"' in self.topLevel:
-            for nodeKey, nodeData in self.topLevel['\"nodes\"'].items():
-                if '"isNotable"' in nodeData.subnodes:
+            for nodeKey, nodeData in self.topLevel['\"nodes\"'].subnodes.items():
+                if nodeData.isNotableNode():
                     print('Nullifying notable node with id '+nodeKey+'.\n')
                     self.nullify_notable_node(nodeKey)
-                elif '"isMastery"' in nodeData.subnodes:
+                elif nodeData.isMasteryNode():
                     print('Nullifying mastery node with id '+nodeKey+'.\n')
                     self.nullify_mastery_node(nodeKey)
-                elif '"ascendancyName"' in nodeData.subnodes:
+                elif nodeData.isAscendancyNode():
                     print('Nullifying ascendancy node with id '+nodeKey+'.\n')
                     self.nullify_ascendancy_node(nodeKey)
                 #Make sure to skip jewel nodes
-                elif self.topLevel.isNotJewelSocket(nodeData):
+                elif nodeData.isNotJewelSocket():
                     print('Nullifying node with id '+nodeKey+'.\n')
                     self.nullify_normal_node(nodeKey)
         else:
@@ -587,17 +587,17 @@ class TreeStorage:
             skillTreeNodes = original_topLevel['\"nodes\"']
             nonReplacedNodeIds:list[str] = [x for x in skillTreeNodes.subnodes.keys() if x not in nodeReplacementInfo]
             for nodeKey in nonReplacedNodeIds:
-                if '\"isNotable\"' in original_topLevel['\"nodes\"'].subnodes[nodeKey].subnodes:
+                if original_topLevel['\"nodes\"'].subnodes[nodeKey].isNotableNode():
                     print('Nullifying notable node with id '+nodeKey+'.\n')
                     self.nullify_notable_node(nodeKey)
-                elif '\"isMastery\"' in original_topLevel['\"nodes\"'].subnodes[nodeKey].subnodes:
+                elif original_topLevel['\"nodes\"'].subnodes[nodeKey].isMasteryNode():
                     print('Nullifying mastery node with id '+nodeKey+'.\n')
                     self.nullify_mastery_node(nodeKey)
-                elif '\"ascendancyName\"' in original_topLevel['\"nodes\"'].subnodes[nodeKey].subnodes:
+                elif original_topLevel['\"nodes\"'].subnodes[nodeKey].isAscendancyNode():
                     print('Nullifying ascendancy node with id '+nodeKey+'.\n')
                     self.nullify_ascendancy_node(nodeKey)
                 #Make sure to skip jewel nodes
-                elif self.topLevel.isJewelSocket(original_topLevel['\"nodes\"'].subnodes[nodeKey]):# elif '\"isJewelSocket\"' not in original_topLevel['\"nodes\"'].subnodes[nodeKey].subnodes:
+                elif  original_topLevel['\"nodes\"'].subnodes[nodeKey].isNotJewelSocket():
                     print('Nullifying node with id '+nodeKey+'.\n')
                     self.nullify_normal_node(nodeKey)
         else:
@@ -613,39 +613,40 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     originalFileData = load_tree(inputDirectory)
     #Parsing lines into nodes instead
     original_tree:TreeStorage = TreeStorage(originalFileData)
-    original_tree.printDebugInfo()
+    #original_tree.printDebugInfo()
     modified_tree:TreeStorage = original_tree
     nodeReplacementInfo:dict[str, str]={}
 
-    if len(all_jsons) < 1:
+    modified_tree.nullifyAllSkillTreeNodes()
+    #if len(all_jsons) < 1:
     #{
-        print('No JSON files found in data directory...Converting all nodes into nothing instead \n')
-        modified_tree.nullifyAllSkillTreeNodes()
+        # print('No JSON files found in data directory...Converting all nodes into nothing instead \n')
+        # modified_tree.nullifyAllSkillTreeNodes()
     #}
-    else:
-    #{
-        #Files need to follow stringify 4 space format with 2 spaces on bracket or similar format or will fail to read json files (minify format will most likely fail)
-        all_node_data = pd.concat([pd.read_json(json_file, typ='series', dtype='dict', encoding_errors='ignore') for json_file in all_jsons])
-        #print('node_df stage starting \n')
-        node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
-        #print('dropping duplicates \n')
-        node_df = node_df.drop_duplicates()
-        nothingness_dupes = node_df[node_df['original'].duplicated(keep=False)]
-        node_df = node_df.drop(nothingness_dupes[nothingness_dupes['new']==-1].index)
+    # else:
+    # #{
+    #     #Files need to follow stringify 4 space format with 2 spaces on bracket or similar format or will fail to read json files (minify format will most likely fail)
+    #     all_node_data = pd.concat([pd.read_json(json_file, typ='series', dtype='dict', encoding_errors='ignore') for json_file in all_jsons])
+    #     #print('node_df stage starting \n')
+    #     node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
+    #     #print('dropping duplicates \n')
+    #     node_df = node_df.drop_duplicates()
+    #     nothingness_dupes = node_df[node_df['original'].duplicated(keep=False)]
+    #     node_df = node_df.drop(nothingness_dupes[nothingness_dupes['new']==-1].index)
 
-        if any(node_df['original'].duplicated()):
-            print('WARNING: mismatched duplicate nodes found:')
-            for node_id in np.where(node_df['original'].duplicated())[0]:
-                print('mismatch original node: '+str(node_df.iloc[node_id]['original'])) #+', new: '+str(node_df.iloc[node_id]['new']))
+    #     if any(node_df['original'].duplicated()):
+    #         print('WARNING: mismatched duplicate nodes found:')
+    #         for node_id in np.where(node_df['original'].duplicated())[0]:
+    #             print('mismatch original node: '+str(node_df.iloc[node_id]['original'])) #+', new: '+str(node_df.iloc[node_id]['new']))
 
-        for line in range(len(node_df)):
-            nodeReplacementInfo[node_df.iloc[line]['original']] = node_df.iloc[line]['new']
+    #     for line in range(len(node_df)):
+    #         nodeReplacementInfo[node_df.iloc[line]['original']] = node_df.iloc[line]['new']
 
-        #Test NodeTree generation and reconstruction before creating new code for replacing nodes
-        modified_tree.replace_nodes(original_tree.topLevel, nodeReplacementInfo)
+    #     #Test NodeTree generation and reconstruction before creating new code for replacing nodes
+    #     #modified_tree.replace_nodes(original_tree.topLevel, nodeReplacementInfo)
 
-        modified_tree.nullifyUnusedNodes(original_tree.topLevel, nodeReplacementInfo)
-    #}
+    #     #modified_tree.nullifyUnusedNodes(original_tree.topLevel, nodeReplacementInfo)
+    # #}
     modified_tree.reconstructAndSave_Tree(outputDirectory)
 
 #Use breakpoints at error message prints in Visual Studio to find bugs in json file
