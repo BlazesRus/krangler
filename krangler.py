@@ -416,7 +416,10 @@ class TreeStorage:
         return indentationLevel#making sure to pass values back to main function
 
     def generateNodeTree(self, fileData:list[str]):
-        # self.topLevel:dict[str, LuaNode] = dict()
+        # # Forcing initialization
+        # self.RootStart = ''
+        # self.topLevel:dict[str, LuaNode] = {}
+
         topLevel_luaNodeLineNumber = -1
         lineNumber = -1
         #
@@ -440,6 +443,7 @@ class TreeStorage:
             if(topLevel_luaNodeLineNumber==-1):#Add to root level before actual node info starts
             #{
                 if '[' in line:#{
+                    #print(self.RootStart, end='')
                     topLevel_luaNodeLineNumber = lineNumber;
                 #}
                 else:#{
@@ -456,6 +460,7 @@ class TreeStorage:
                         elif lineChar==']':#["nodes"]= created at this point
                             ScanningInfo.topLevelKey = ScanningInfo.scanBuffer
                             self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey)
+                            print(' '*4+'['+ScanningInfo.topLevelKey+']= ', end='')
                             if ',' not in line:
                                 indentationLevel = 2
                             ScanningInfo.reset_scans()
@@ -466,6 +471,7 @@ class TreeStorage:
                         if indentationLevel==1:#Scanning top level tag content
                             if lineChar==',':
                                 self.topLevel[ScanningInfo.topLevelKey].set_nodeContent(ScanningInfo.scanBuffer)
+                                print(ScanningInfo.scanBuffer+',')
                                 ScanningInfo.topLevelKey = ''
                             elif lineChar!='=':
                                 ScanningInfo.scanBuffer += lineChar
@@ -473,12 +479,15 @@ class TreeStorage:
                             if ScanningInfo.scanLevel=='':
                                 if lineChar=='{':
                                     ScanningInfo.set_scanLevel('{')
+                                    print('{')#should print right before topLevel nodes end of line containing name of top level node
                                 elif lineChar=='}':#Exiting topLevelKey (ignoring the comma that might be after)
                                     ScanningInfo.reset_topLevelKey()
+                                    print(' '*8+'}')
                                     if(len(keyPosition)==0):
                                         print('Error:Exiting indentation level without correct position saved in key position(Forcing early exit of scan)')
                                         break
                                     keyPosition.pop();#removing last position data
+                                    indentationLevel = 1
                             #classes subgroup has {} as subgroups for class information such as for ascendancies
                             elif ScanningInfo.scanLevel=='{' and lineChar=='{':
                                 ScanningInfo.set_scanLevel('classinfo')
@@ -496,6 +505,7 @@ class TreeStorage:
                                     currentNodeName = ScanningInfo.scanBuffer
                                     ScanningInfo.reset_scanBuffer()
                                     currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeFromTopLevel(currentNodeName)#Add node to Tree (SkillNodeID created here)
+                                    print(' '*8+'['+currentNodeKey+']= ', end='')
                                     if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].subnodes):
                                         print("Failed to add subnode:'+currentNodeKey+' to Tree")
                                     ScanningInfo.set_scanLevel('nextOrContent')#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
