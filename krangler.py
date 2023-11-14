@@ -281,6 +281,7 @@ class ScanInfo:
     __slots__ = ["scanLevel", "scanBuffer", "topLevelKey", "currentNodeKey"]
     def __init__(self):
         self.scanLevel = ''
+        self.scanLevel02 = ''
         self.scanBuffer = ''
         self.topLevelKey = ''
         self.currentNodeKey = ''
@@ -296,6 +297,8 @@ class ScanInfo:
     
     def set_scanLevel(self, value:str):
         self.scanLevel = value
+        if self.scanLevel02!=''
+            self.scanLevel02 = ''
     
     def set_scanBuffer(self, value:str):
         self.scanBuffer = value
@@ -357,8 +360,6 @@ class TreeStorage:
             f.write('}')
             f.close();
 
-    def recursivelyLoadNodeInput(self, lineChar:str, ScanningInfo:ScanInfo, keyPosition:list[str]):
-
     def generateNodeTree(self, fileData:list[str]):
         topLevel_luaNodeLineNumber = -1
         lineNumber = -1
@@ -393,8 +394,6 @@ class TreeStorage:
                         elif lineChar==']':#["nodes"]= created at this point
                             ScanningInfo.topLevelKey = ScanningInfo.scanBuffer
                             self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey)
-                            if __debug__:
-                                print(' '*4+'['+ScanningInfo.topLevelKey+']= ', end='')
                             if ',' in line:
                                 ScanningInfo.set_scanLevel('ScanningTopLevelContent')
                             else
@@ -403,9 +402,35 @@ class TreeStorage:
                         elif ScanningInfo.scanLevel=='insideTopLevelNodeName':
                             ScanningInfo.append_Buffer(lineChar);
                     #}
+                    elif lineChar=='}':
+                        if len(keyPosition)==0:#Should be exiting TopLevelNode
+                            ScanningInfo.reset_topLevelKey()
+                        else:#keyPosition size is 1 when at 1st Subnode Level
+                            keyPosition.pop();
                     elif(ScanningInfo.scanLevel=='ScanningTopLevelContent'):#indentationLevel==1
-                        print('Placeholder')
+                        if lineChar==',':
+                            self.topLevel[ScanningInfo.topLevelKey].set_nodeContent(ScanningInfo.scanBuffer)
+                            if __debug__:
+                                print(ScanningInfo.scanBuffer+',')
+                            ScanningInfo.topLevelKey = ''
+                        elif lineChar!='=':
+                            ScanningInfo.scanBuffer += lineChar
                     elif(ScanningInfo.scanLevel=='EnteringTopLevelSubOrListContent'):#indentationLevel==1
+                        if(ScanningInfo.scanLevel02=='AtStartOrList'):
+                            if lineChar=='[':
+                                if ',' in line:
+                                    ScanningInfo.set_scanLevel('Scanning1stSublevelWithContent')
+                                else:
+                                    ScanningInfo.set_scanLevel('EnterPast1stSubLevelOrListContent')
+                            elif lineChar=='{':#Entering Grouping node
+                                ScanningInfo.set_scanLevel('EnterPast1stSubLevelGrouping')
+                        elif lineChar=='{':
+                            ScanningInfo.scanLevel02 = 'AtStartOrList'
+                    elif ScanningInfo.scanLevel=='Scanning1stSublevelWithContent':#indentationLevel==1
+                        print('Placeholder')
+                    elif ScanningInfo.scanLevel=='EnterPast1stSubLevelOrListContent':#indentationLevel==1
+                        print('Placeholder')
+                    elif ScanningInfo.scanLevel=='EnterPast1stSubLevelGrouping':#indentationLevel==1
                         print('Placeholder')
                     else:#{
                         indentationLevel = len(keyPosition)+1
@@ -416,8 +441,8 @@ class TreeStorage:
       #                      indentationLevel  = self.recursivelyLoadNodeInput(lineChar, ScanningInfo, keyPosition, indentationLevel)
                     #}
             #}
-            if indentationLevel==-1:#forcing early end to loop because of error
-                break;
+            #if indentationLevel==-1:#forcing early end to loop because of error
+            #    break;
         #}
         print('Finished loading lua file into node tree.  '+str(lineNumber)+" lines total scanned.\n")
 
