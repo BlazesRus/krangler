@@ -357,92 +357,17 @@ class TreeStorage:
             f.write('}')
             f.close();
 
-    def recursivelyLoadNodeInput(self, lineChar:str, ScanningInfo:ScanInfo, keyPosition:list[str], indentationLevel=3):
-        if ScanningInfo.scanLevel=='':
-            if lineChar=='{':
-                ScanningInfo.set_scanLevel('{')
-                if __debug__:
-                    print(' '*4*indentationLevel+'{')
-            elif(lineChar=='}'):#Exiting Node level
-                --indentationLevel;
-                if(keyPosition[-1]=='{'):#Only remove keyposition if current node is grouping node.
-                    keyPosition.pop();#removing last position data
-                if __debug__:
-                    print(' '*4*indentationLevel+'}')
-        elif ScanningInfo.scanLevel=='{' and lineChar=='[':
-            ScanningInfo.set_scanLevel('[')
-            if __debug__:
-                print(' '*4*indentationLevel+'[', end='')
-        #Grouping node
-        elif ScanningInfo.scanLevel=='{' and lineChar=='{':
-            ScanningInfo.get_scanLevel('classinfo')
-            #ParentNode == self.topLevel[topLevelKey].recursiveSubNodes[keyPosition[-1]]
-            ScanInfo.currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeToSubnode(self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])
-            if __debug__:
-                print(' '*4*indentationLevel+'\{', end='')
-            keyPosition.append(ScanInfo.currentNodeKey)
-        elif ScanningInfo.scanLevel=='classinfo' and lineChar=='[':
-            indentationLevel += 1
-            ScanningInfo.set_scanLevel('[')
-            if __debug__:
-                print(' '*4*indentationLevel+'[', end='')
-        elif ScanningInfo.scanLevel=='[':
-            if lineChar==']':
-                if(keyPosition[-1] not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
-                    print(keyPosition[-1]+' not detected within '+ScanningInfo.topLevelKey+'\'s recursive subnode storage.\n')
-                    return -1#force early exit on error(-1 breaks the loop)
-                subNodeKey:str = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])#Add node to Tree
-                if __debug__:
-                    print(' '*4*indentationLevel+ScanningInfo.scanBuffer+']=', end='')
-                keyPosition.append(subNodeKey)
-                ScanningInfo.reset_scanBuffer()
-                ScanningInfo.set_scanLevel('nextOrContent')#Search for either node content or subnodes
-            else:
-                ScanningInfo.append_Buffer(lineChar)
-        elif ScanningInfo.scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
-            if lineChar=='{':
-                indentationLevel += 1
-                ScanningInfo.reset_scanLevel()
-                if __debug__:
-                    print(' '*4*indentationLevel+'{')
-                indentationLevel = self.recursivelyLoadNodeInput(lineChar, ScanningInfo, keyPosition, indentationLevel)
-            elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
-                ScanningInfo.set_scanLevel('nodeContent')
-                ScanningInfo.set_scanBuffer(lineChar)
-        elif ScanningInfo.scanLevel=='nodeContent':
-            if lineChar==',' or lineChar=='\n':
-                self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]].nodeContent = ScanningInfo.scanBuffer
-                if __debug__:
-                    print(' '*4*indentationLevel+ScanningInfo.scanBuffer+',')
-                keyPosition.pop();#removing last position data
-            else:
-                ScanningInfo.append_Buffer(lineChar);
-        elif ScanningInfo.scanLevel=='listInfo':
-            if lineChar==',' or lineChar=='\n':
-                subNodeKey:str = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])
-                if __debug__:
-                    print(' '*4*indentationLevel+ScanningInfo.scanBuffer+',')
-                #keyPosition.append(subNodeKey)
-                ScanningInfo.reset_scans()
-            else:
-                ScanningInfo.scanBuffer += lineChar
-        elif lineChar!=' ' and lineChar=='\n':
-            ScanningInfo.set_scanLevel('listInfo')
-            ScanningInfo.set_scanBuffer(lineChar)
-        return indentationLevel#making sure to pass values back to main function
+    def recursivelyLoadNodeInput(self, lineChar:str, ScanningInfo:ScanInfo, keyPosition:list[str]):
 
     def generateNodeTree(self, fileData:list[str]):
         topLevel_luaNodeLineNumber = -1
         lineNumber = -1
-
         currentNodeName:str
         #Can be passed as reference unlike string information and keeps better track of node position
         keyPosition:list[str] = []
-
         #Indentation level for topLevel nodes are at 1 indentation, actual data for nodes starts at 2 indentation
         #Might remove and just check size of keyPosition
-        indentationLevel = 1;
-        
+        indentationLevel:int = 1;
         #Making use of python's object references to treat variable information as pass-by-reference equivalent
         ScanningInfo:ScanInfo = ScanInfo()
 
@@ -470,24 +395,25 @@ class TreeStorage:
                             self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey)
                             if __debug__:
                                 print(' '*4+'['+ScanningInfo.topLevelKey+']= ', end='')
-                            if ',' not in line:
-                                indentationLevel = 2
-                            ScanningInfo.reset_scans()
+                            if ',' in line:
+                                ScanningInfo.set_scanLevel('ScanningTopLevelContent')
+                            else
+                                ScanningInfo.set_scanLevel('EnteringTopLevelSubOrListContent')
+                            ScanningInfo.reset_scanBuffer()
                         elif ScanningInfo.scanLevel=='insideTopLevelNodeName':
                             ScanningInfo.append_Buffer(lineChar);
                     #}
-                    elif(ScanningInfo.scanLevel=='ScanningTopLevelContent'):
+                    elif(ScanningInfo.scanLevel=='ScanningTopLevelContent'):#indentationLevel==1
                         print('Placeholder')
-                    elif(ScanningInfo.scanLevel=='EnteringTopLevelSubOrListContent'):
+                    elif(ScanningInfo.scanLevel=='EnteringTopLevelSubOrListContent'):#indentationLevel==1
                         print('Placeholder')
                     else:#{
-                        if indentationLevel==1:#Scanning top level tag content
-                            print('Placeholder')
-                        elif indentationLevel==2:#Scanning for NodeId now (node added to subnodes once scanned)
-                            print('Placeholder')
-                        else:
-                            #At indentationLevel==3, scanning for things like ["name"] now (node added to subnodes once scanned)
-                            indentationLevel  = self.recursivelyLoadNodeInput(lineChar, ScanningInfo, keyPosition, indentationLevel)
+                        indentationLevel = len(keyPosition)+1
+      #                  if indentationLevel==2:#Scanning for NodeId now (node added to subnodes once scanned)
+      #                      print('Placeholder')
+      #                  else:
+      #                      #At indentationLevel==3, scanning for things like ["name"] now (node added to subnodes once scanned)
+      #                      indentationLevel  = self.recursivelyLoadNodeInput(lineChar, ScanningInfo, keyPosition, indentationLevel)
                     #}
             #}
             if indentationLevel==-1:#forcing early end to loop because of error
