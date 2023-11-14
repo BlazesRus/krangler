@@ -402,7 +402,7 @@ class TreeStorage:
                         elif ScanningInfo.scanLevel=='insideTopLevelNodeName':
                             ScanningInfo.append_Buffer(lineChar);
                     #}
-                    elif lineChar=='}':
+                    elif lineChar=='}' and ScanningInfo.scanLevel02!='InsideListContent':
                         if len(keyPosition)==0:#Should be exiting TopLevelNode
                             ScanningInfo.reset_topLevelKey()
                         else:#keyPosition size is 1 when at 1st Subnode Level
@@ -415,8 +415,8 @@ class TreeStorage:
                             ScanningInfo.topLevelKey = ''
                         elif lineChar!='=':
                             ScanningInfo.scanBuffer += lineChar
-                    elif(ScanningInfo.scanLevel=='EnteringTopLevelSubOrListContent'):#indentationLevel==1
-                        if(ScanningInfo.scanLevel02=='AtStartOrList'):
+                    elif ScanningInfo.scanLevel=='EnteringTopLevelSubOrListContent':#indentationLevel==1
+                        if ScanningInfo.scanLevel02=='AtStartOrList':
                             if lineChar=='[':
                                 if ',' in line:
                                     ScanningInfo.set_scanLevel('Scanning1stSublevelWithContent')
