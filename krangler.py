@@ -368,7 +368,7 @@ class TreeStorage:
         keyPosition:list[str] = []
         #Indentation level for topLevel nodes are at 1 indentation, actual data for nodes starts at 2 indentation
         #Might remove and just check size of keyPosition
-        indentationLevel:int = 1;
+        indentationLevel:int;
         #Making use of python's object references to treat variable information as pass-by-reference equivalent
         ScanningInfo:ScanInfo = ScanInfo()
 
@@ -527,22 +527,19 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     originalFileData = load_tree(inputDirectory)
     #Parsing lines into nodes instead
     original_tree:TreeStorage = TreeStorage(originalFileData)
-    #original_tree.printDebugInfo()
-    modified_tree:TreeStorage = original_tree
+    modified_tree:TreeStorage = copy.deepcopy(original_tree)
     nodeReplacementInfo:dict[str, str]={}
 
-    #if len(all_jsons) < 1:
-    #{
-        # print('No JSON files found in data directory...Converting all nodes into nothing instead \n')
+    if len(all_jsons) < 1:
+    {
+         print('No JSON files found in data directory...Converting all nodes into nothing instead \n')
         # modified_tree.nullifyAllSkillTreeNodes()
-    #}
-    # else:
-    # #{
+    }
+    else:
+    #{
     #     #Files need to follow stringify 4 space format with 2 spaces on bracket or similar format or will fail to read json files (minify format will most likely fail)
     #     all_node_data = pd.concat([pd.read_json(json_file, typ='series', dtype='dict', encoding_errors='ignore') for json_file in all_jsons])
-    #     #print('node_df stage starting \n')
     #     node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
-    #     #print('dropping duplicates \n')
     #     node_df = node_df.drop_duplicates()
     #     nothingness_dupes = node_df[node_df['original'].duplicated(keep=False)]
     #     node_df = node_df.drop(nothingness_dupes[nothingness_dupes['new']==-1].index)
@@ -559,7 +556,7 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     #     #modified_tree.replace_nodes(original_tree.topLevel, nodeReplacementInfo)
 
     #     #modified_tree.nullifyUnusedNodes(original_tree.topLevel, nodeReplacementInfo)
-    # #}
+    #}
     modified_tree.reconstructAndSave_Tree(outputDirectory)
 
 #Use breakpoints at error message prints in Visual Studio to find bugs in json file
