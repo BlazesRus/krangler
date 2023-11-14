@@ -1,3 +1,4 @@
+import copy
 from io import TextIOWrapper
 import time
 from tkinter import INSIDE
@@ -396,7 +397,7 @@ class TreeStorage:
                             self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey)
                             if ',' in line:
                                 ScanningInfo.set_scanLevel('ScanningTopLevelContent')
-                            else
+                            else:
                                 ScanningInfo.set_scanLevel('EnteringTopLevelSubOrListContent')
                             ScanningInfo.reset_scanBuffer()
                         elif ScanningInfo.scanLevel=='insideTopLevelNodeName':
@@ -426,14 +427,22 @@ class TreeStorage:
                                 ScanningInfo.set_scanLevel('EnterPast1stSubLevelGrouping')
                         elif lineChar=='{':
                             ScanningInfo.scanLevel02 = 'AtStartOrList'
-                    elif ScanningInfo.scanLevel=='Scanning1stSublevelWithContent':#indentationLevel==1
-                        print('Placeholder')
-                    elif ScanningInfo.scanLevel=='EnterPast1stSubLevelOrListContent':#indentationLevel==1
-                        print('Placeholder')
-                    elif ScanningInfo.scanLevel=='EnterPast1stSubLevelGrouping':#indentationLevel==1
+                    elif ScanningInfo.scanLevel=='Scanning1stSublevelWithContent':#indentationLevel==2
+                        if ScanningInfo.scanLevel02 == '':
+                            print('Placeholder')
+                    elif ScanningInfo.scanLevel=='EnterPast1stSubLevelOrListContent':#indentationLevel==2
+                        if ScanningInfo.scanLevel02 == '':
+                            print('Placeholder')
+                    elif ScanningInfo.scanLevel=='EnterPast1stSubLevelGrouping':#indentationLevel==2
                         print('Placeholder')
                     else:#{
-                        indentationLevel = len(keyPosition)+1
+                        if(ScanningInfo.scanLevel02=='InsideListContent'):
+                            if lineChar=='}':
+                                ScanningInfo.scanLevel02 = ''
+                            else:
+                                print('placeholder')
+                        else:
+                            indentationLevel = len(keyPosition)+1
       #                  if indentationLevel==2:#Scanning for NodeId now (node added to subnodes once scanned)
       #                      print('Placeholder')
       #                  else:
@@ -525,37 +534,37 @@ def load_tree(inputDirectory, fname='tree.lua'):
 def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     all_jsons = glob.glob(basedir+'*.json')
     originalFileData = load_tree(inputDirectory)
-    #Parsing lines into nodes instead
+    #Parsing lines into nodes instead of editing the file data directly
     original_tree:TreeStorage = TreeStorage(originalFileData)
     modified_tree:TreeStorage = copy.deepcopy(original_tree)
     nodeReplacementInfo:dict[str, str]={}
 
     if len(all_jsons) < 1:
-    {
+    #{
          print('No JSON files found in data directory...Converting all nodes into nothing instead \n')
         # modified_tree.nullifyAllSkillTreeNodes()
-    }
+    #}
     else:
     #{
-    #     #Files need to follow stringify 4 space format with 2 spaces on bracket or similar format or will fail to read json files (minify format will most likely fail)
-    #     all_node_data = pd.concat([pd.read_json(json_file, typ='series', dtype='dict', encoding_errors='ignore') for json_file in all_jsons])
-    #     node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
-    #     node_df = node_df.drop_duplicates()
-    #     nothingness_dupes = node_df[node_df['original'].duplicated(keep=False)]
-    #     node_df = node_df.drop(nothingness_dupes[nothingness_dupes['new']==-1].index)
+        #Files need to follow stringify 4 space format with 2 spaces on bracket or similar format or will fail to read json files (minify format will most likely fail)
+        all_node_data = pd.concat([pd.read_json(json_file, typ='series', dtype='dict', encoding_errors='ignore') for json_file in all_jsons])
+        node_df = pd.DataFrame(all_node_data).reset_index().rename(columns = {'index':'original', 0:'new'})
+        node_df = node_df.drop_duplicates()
+        nothingness_dupes = node_df[node_df['original'].duplicated(keep=False)]
+        node_df = node_df.drop(nothingness_dupes[nothingness_dupes['new']==-1].index)
 
-    #     if any(node_df['original'].duplicated()):
-    #         print('WARNING: mismatched duplicate nodes found:')
-    #         for node_id in np.where(node_df['original'].duplicated())[0]:
-    #             print('mismatch original node: '+str(node_df.iloc[node_id]['original'])) #+', new: '+str(node_df.iloc[node_id]['new']))
+        if any(node_df['original'].duplicated()):
+            print('WARNING: mismatched duplicate nodes found:')
+            for node_id in np.where(node_df['original'].duplicated())[0]:
+                print('mismatch original node: '+str(node_df.iloc[node_id]['original'])) #+', new: '+str(node_df.iloc[node_id]['new']))
 
-    #     for line in range(len(node_df)):
-    #         nodeReplacementInfo[node_df.iloc[line]['original']] = node_df.iloc[line]['new']
+        for line in range(len(node_df)):
+            nodeReplacementInfo[node_df.iloc[line]['original']] = node_df.iloc[line]['new']
 
-    #     #Test NodeTree generation and reconstruction before creating new code for replacing nodes
-    #     #modified_tree.replace_nodes(original_tree.topLevel, nodeReplacementInfo)
+        #Test NodeTree generation and reconstruction before creating new code for replacing nodes
+        modified_tree.replace_nodes(original_tree.topLevel, nodeReplacementInfo)
 
-    #     #modified_tree.nullifyUnusedNodes(original_tree.topLevel, nodeReplacementInfo)
+        modified_tree.nullifyUnusedNodes(original_tree.topLevel, nodeReplacementInfo)
     #}
     modified_tree.reconstructAndSave_Tree(outputDirectory)
 
