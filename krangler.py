@@ -331,7 +331,7 @@ class TreeStorage:
     def reconstructAndSave_Tree(self, outputDirectory, fname='tree.lua'):
         fullPath:str
         if(outputDirectory=='./Debug/'):
-            fullPath = './Debug/'+'treeOutput.lua'
+            fullPath = './Debug/'+'tree.lua'
         else:
             fullPath = outputDirectory+fname
     #   print('Saving edited tree to '+fullPath+'. \n')
@@ -613,10 +613,13 @@ class TreeStorage:
         else:
             print('Error:Nodes group doesn\'t exist inside file')
         
-def load_tree(outputDirectory, fname='tree.lua'):
-    fullPath = outputDirectory+fname
+def load_tree(inputDirectory, fname='tree.lua'):
+    if(inputDirectory=='./Debug/'):
+        fullPath = './Debug/'+'DebugInput.lua'
+    else:
+        fullPath = inputDirectory+fname
  #   print('Loading tree from '+fullPath+'. \n')
-    return open(outputDirectory+'/tree.lua','r').readlines()
+    return open(fullPath,'r').readlines()
 
 def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     all_jsons = glob.glob(basedir+'*.json')
