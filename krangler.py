@@ -278,11 +278,12 @@ class LuaNode(object):
             nodeData.printDebugInfo(nodeKey)
 
 class ScanInfo:
-    __slots__ = ["scanLevel", "scanBuffer", "topLevelKey"]
+    __slots__ = ["scanLevel", "scanBuffer", "topLevelKey", "currentNodeKey"]
     def __init__(self):
         self.scanLevel = ''
         self.scanBuffer = ''
         self.topLevelKey = ''
+        self.currentNodeKey = ''
         
     def get_scanLevel(self):
         return self.scanLevel
@@ -360,30 +361,39 @@ class TreeStorage:
         if ScanningInfo.scanLevel=='':
             if lineChar=='{':
                 ScanningInfo.set_scanLevel('{')
+                if __debug__:
+                    print(' '*4*indentationLevel+'{')
             elif(lineChar=='}'):#Exiting Node level
                 --indentationLevel;
-                keyPosition.pop();#removing last position data
+                if(keyPosition[-1]=='{'):#Only remove keyposition if current node is grouping node.
+                    keyPosition.pop();#removing last position data
+                if __debug__:
+                    print(' '*4*indentationLevel+'}')
         elif ScanningInfo.scanLevel=='{' and lineChar=='[':
             ScanningInfo.set_scanLevel('[')
+            if __debug__:
+                print(' '*4*indentationLevel+'[', end='')
         #Grouping node
         elif ScanningInfo.scanLevel=='{' and lineChar=='{':
             ScanningInfo.get_scanLevel('classinfo')
             #ParentNode == self.topLevel[topLevelKey].recursiveSubNodes[keyPosition[-1]]
-            currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeToSubnode(self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])
-            if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
-                print("Failed to add grouping subnode:'+currentNodeKey+' to Tree at indentation level "+str(indentationLevel))
-            keyPosition.append(currentNodeKey)
+            ScanInfo.currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeToSubnode(self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])
+            if __debug__:
+                print(' '*4*indentationLevel+'\{', end='')
+            keyPosition.append(ScanInfo.currentNodeKey)
         elif ScanningInfo.scanLevel=='classinfo' and lineChar=='[':
             indentationLevel += 1
             ScanningInfo.set_scanLevel('[')
+            if __debug__:
+                print(' '*4*indentationLevel+'[', end='')
         elif ScanningInfo.scanLevel=='[':
             if lineChar==']':
                 if(keyPosition[-1] not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
                     print(keyPosition[-1]+' not detected within '+ScanningInfo.topLevelKey+'\'s recursive subnode storage.\n')
                     return -1#force early exit on error(-1 breaks the loop)
                 subNodeKey:str = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])#Add node to Tree
-                if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes):
-                    print("Failed to add subnode:'+subNodeKey+' to Tree at indentation level "+str(indentationLevel))
+                if __debug__:
+                    print(' '*4*indentationLevel+ScanningInfo.scanBuffer+']=', end='')
                 keyPosition.append(subNodeKey)
                 ScanningInfo.reset_scanBuffer()
                 ScanningInfo.set_scanLevel('nextOrContent')#Search for either node content or subnodes
@@ -393,6 +403,8 @@ class TreeStorage:
             if lineChar=='{':
                 indentationLevel += 1
                 ScanningInfo.reset_scanLevel()
+                if __debug__:
+                    print(' '*4*indentationLevel+'{')
                 indentationLevel = self.recursivelyLoadNodeInput(lineChar, ScanningInfo, keyPosition, indentationLevel)
             elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
                 ScanningInfo.set_scanLevel('nodeContent')
@@ -400,13 +412,17 @@ class TreeStorage:
         elif ScanningInfo.scanLevel=='nodeContent':
             if lineChar==',' or lineChar=='\n':
                 self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]].nodeContent = ScanningInfo.scanBuffer
+                if __debug__:
+                    print(' '*4*indentationLevel+ScanningInfo.scanBuffer+',')
                 keyPosition.pop();#removing last position data
             else:
                 ScanningInfo.append_Buffer(lineChar);
         elif ScanningInfo.scanLevel=='listInfo':
             if lineChar==',' or lineChar=='\n':
                 subNodeKey:str = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])
-                keyPosition.append(subNodeKey)
+                if __debug__:
+                    print(' '*4*indentationLevel+ScanningInfo.scanBuffer+',')
+                #keyPosition.append(subNodeKey)
                 ScanningInfo.reset_scans()
             else:
                 ScanningInfo.scanBuffer += lineChar
@@ -422,8 +438,7 @@ class TreeStorage:
 
         topLevel_luaNodeLineNumber = -1
         lineNumber = -1
-        #
-        currentNodeKey:str
+
         currentNodeName:str
         #Can be passed as reference unlike string information and keeps better track of node position
         keyPosition:list[str] = []
@@ -460,7 +475,8 @@ class TreeStorage:
                         elif lineChar==']':#["nodes"]= created at this point
                             ScanningInfo.topLevelKey = ScanningInfo.scanBuffer
                             self.topLevel[ScanningInfo.topLevelKey] = LuaNode(ScanningInfo.topLevelKey)
-                            print(' '*4+'['+ScanningInfo.topLevelKey+']= ', end='')
+                            if __debug__:
+                                print(' '*4+'['+ScanningInfo.topLevelKey+']= ', end='')
                             if ',' not in line:
                                 indentationLevel = 2
                             ScanningInfo.reset_scans()
@@ -471,7 +487,8 @@ class TreeStorage:
                         if indentationLevel==1:#Scanning top level tag content
                             if lineChar==',':
                                 self.topLevel[ScanningInfo.topLevelKey].set_nodeContent(ScanningInfo.scanBuffer)
-                                print(ScanningInfo.scanBuffer+',')
+                                if __debug__:
+                                    print(ScanningInfo.scanBuffer+',')
                                 ScanningInfo.topLevelKey = ''
                             elif lineChar!='=':
                                 ScanningInfo.scanBuffer += lineChar
@@ -479,22 +496,22 @@ class TreeStorage:
                             if ScanningInfo.scanLevel=='':
                                 if lineChar=='{':
                                     ScanningInfo.set_scanLevel('{')
-                                    print('{')#should print right before topLevel nodes end of line containing name of top level node
+                                    if __debug__:
+                                        print('{')#should print right before topLevel nodes end of line containing name of top level node
                                 elif lineChar=='}':#Exiting topLevelKey (ignoring the comma that might be after)
                                     ScanningInfo.reset_topLevelKey()
-                                    print(' '*8+'}')
-                                    if(len(keyPosition)==0):
-                                        print('Error:Exiting indentation level without correct position saved in key position(Forcing early exit of scan)')
-                                        break
-                                    keyPosition.pop();#removing last position data
+                                    if __debug__:
+                                        print(' '*8+'}')
+                                    if(keyPosition[-1]=='{'):#Only remove keyposition if current node is grouping node.
+                                        keyPosition.pop();#removing last position data
                                     indentationLevel = 1
                             #classes subgroup has {} as subgroups for class information such as for ascendancies
                             elif ScanningInfo.scanLevel=='{' and lineChar=='{':
                                 ScanningInfo.set_scanLevel('classinfo')
-                                currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeFromTopLevel()
-                                if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].subnodes):
-                                    print("Failed to add grouping subnode:'+currentNodeKey+' to Tree")
-                                keyPosition.append(currentNodeKey)
+                                ScanInfo.currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeFromTopLevel()
+                                if __debug__:#Printing input information to console
+                                    print(' '*8+'{', end='')
+                                keyPosition.append(ScanInfo.currentNodeKey)
                             elif ScanningInfo.scanLevel=='classinfo' and lineChar=='[':
                                 indentationLevel = 3
                                 ScanningInfo.set_scanLevel('[')
@@ -504,31 +521,36 @@ class TreeStorage:
                                 if lineChar==']':
                                     currentNodeName = ScanningInfo.scanBuffer
                                     ScanningInfo.reset_scanBuffer()
-                                    currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeFromTopLevel(currentNodeName)#Add node to Tree (SkillNodeID created here)
-                                    print(' '*8+'['+currentNodeKey+']= ', end='')
-                                    if(currentNodeKey not in self.topLevel[ScanningInfo.topLevelKey].subnodes):
-                                        print("Failed to add subnode:'+currentNodeKey+' to Tree")
+                                    ScanInfo.currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeFromTopLevel(currentNodeName)#Add node to Tree (SkillNodeID created here)
+                                    if __debug__:#Printing input information to console
+                                        print(' '*8+'['+ScanInfo.currentNodeKey+']= ', end='')
                                     ScanningInfo.set_scanLevel('nextOrContent')#Search for either node content or subnodes(should only need to find subnodes for skilltree nodes).
-                                    keyPosition.append(currentNodeKey)
+                                    #keyPosition.append(ScanInfo.currentNodeKey)
                                 else:
                                     ScanningInfo.append_Buffer(lineChar)
                             elif ScanningInfo.scanLevel=='nextOrContent':#Searching for subnodes like ["name"] or in rare cases search for node content value
                                 if lineChar=='{':
                                     indentationLevel = 3
-                                    keyPosition.append(currentNodeKey)
+                                    if __debug__:#Printing input information to console
+                                        print('{')
+                                    keyPosition.append(ScanInfo.currentNodeKey)
                                     ScanningInfo.reset_scanLevel()
                                 elif lineChar!=' ' and lineChar!='=':#["points"]'s groups ["totalPoints"]= uses this
                                     ScanningInfo.set_scanLevel('nodeContent')
                                     ScanningInfo.set_scanBuffer(lineChar)
                             elif ScanningInfo.scanLevel=='nodeContent':
                                 if lineChar==',' or lineChar=='\n':
-                                    self.topLevel[ScanningInfo.topLevelKey].subnodes[ScanningInfo['currentNodeKey']].nodeContent = ScanningInfo.scanBuffer
+                                    self.topLevel[ScanningInfo.topLevelKey].subnodes[ScanningInfo['ScanInfo.currentNodeKey']].nodeContent = ScanningInfo.scanBuffer
+                                    if __debug__:#Printing input information to console
+                                        print(ScanningInfo.scanBuffer+',')
                                 else:
                                     ScanningInfo.append_Buffer(lineChar);
                             elif ScanningInfo.scanLevel=='listInfo':
                                 if lineChar==',' or lineChar=='\n':
-                                    currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeFromTopLevel(ScanningInfo.scanBuffer)
-                                    keyPosition.append(currentNodeKey)
+                                    ScanInfo.currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeFromTopLevel(ScanningInfo.scanBuffer)
+                                    if __debug__:#Printing input information to console
+                                        print(ScanningInfo.scanBuffer+',')
+                                    #keyPosition.append(ScanInfo.currentNodeKey)
                                     ScanningInfo.reset_scans()
                                 else:
                                     ScanningInfo.scanBuffer += lineChar
@@ -630,7 +652,6 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     modified_tree:TreeStorage = original_tree
     nodeReplacementInfo:dict[str, str]={}
 
-    modified_tree.nullifyAllSkillTreeNodes()
     #if len(all_jsons) < 1:
     #{
         # print('No JSON files found in data directory...Converting all nodes into nothing instead \n')
@@ -688,7 +709,7 @@ def main():
     OrigTreeOverrideData.close()
     OrigTree_DIR:str
     KrangledData_DIR:str
-    if OrigTreeOverride == "./Debug/":
+    if OrigTreeOverride == "./Debug/" or ".\\Debug\\":
         OrigTree_DIR = './Debug/'
     elif OrigTreeOverride == "":
         #detect if using Path of Building Source instead of using compiled code
@@ -698,7 +719,7 @@ def main():
             OrigTree_DIR = POBInstallLocation+'/TreeData/3_22/'
     else:
         OrigTree_DIR = OrigTreeOverride
-    if OrigTreeOverride == './Debug/':
+    if OrigTreeOverride == "./Debug/" or ".\\Debug\\":
         KrangledData_DIR = './Debug/'
     else:
         #Edit dataFolderOutputOverride.txt file to override OrigTree_DIR default pathing

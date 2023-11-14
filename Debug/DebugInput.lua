@@ -1,5 +1,15 @@
 ﻿return {
     ["TopLevelOne"]= "Default",
+    ["imageZoomLevels"]= {
+        0.1246,
+        0.2109,
+        0.2972,
+        0.3835
+    },
+    ["points"]= {
+        ["totalPoints"]= 123,
+        ["ascendancyPoints"]= 8
+    }
     ["nodes"]= {
         [33]= {
             ["icon"]= "Art/2DArt/SkillIcons/passives/NotableBlank.png",
@@ -437,14 +447,4 @@
             }
         }
     },
-    ["imageZoomLevels"]= {
-        0.1246,
-        0.2109,
-        0.2972,
-        0.3835
-    },
-    ["points"]= {
-        ["totalPoints"]= 123,
-        ["ascendancyPoints"]= 8
-    }
 }
