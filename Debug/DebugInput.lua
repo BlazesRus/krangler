@@ -1,4 +1,4 @@
-﻿return {
+return {
     ["TopLevelOne"]= "Default",
     ["imageZoomLevels"]= {
         0.1246,
