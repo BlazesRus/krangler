@@ -432,10 +432,6 @@ class TreeStorage:
         return indentationLevel#making sure to pass values back to main function
 
     def generateNodeTree(self, fileData:list[str]):
-        # # Forcing initialization
-        # self.RootStart = ''
-        # self.topLevel:dict[str, LuaNode] = {}
-
         topLevel_luaNodeLineNumber = -1
         lineNumber = -1
 
@@ -447,9 +443,6 @@ class TreeStorage:
         #Might remove and just check size of keyPosition
         indentationLevel = 1;
         
-        #scanLevel:str = ''
-        #scanBuffer = ''
-        #topLevelKey = ''
         #Making use of python's object references to treat variable information as pass-by-reference equivalent
         ScanningInfo:ScanInfo = ScanInfo()
 
