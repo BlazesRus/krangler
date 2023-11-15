@@ -372,6 +372,7 @@ class TreeStorage:
         indentationLevel:int;
         #Making use of python's object references to treat variable information as pass-by-reference equivalent
         ScanningInfo:ScanInfo = ScanInfo()
+        currentNodeKey:str
 
         for line in fileData:#{
             lineNumber += 1;
