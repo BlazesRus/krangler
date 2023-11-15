@@ -425,19 +425,45 @@ class TreeStorage:
                                 else:
                                     ScanningInfo.set_scanLevel('EnterPast1stSubLevelOrListContent')
                             elif lineChar=='{':#Entering Grouping node
-                                ScanningInfo.set_scanLevel('EnterPast1stSubLevelGrouping')
+                                currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeFromTopLevel()
+                                keyPosition.append(currentNodeKey)
+                                ScanningInfo.reset_scans()
                         elif lineChar=='{':
                             ScanningInfo.scanLevel02 = 'AtStartOrList'
                     elif ScanningInfo.scanLevel=='Scanning1stSublevelWithContent':#indentationLevel==2
                         if ScanningInfo.scanLevel02 == '':
+                            if lineChar==']':
+                                subNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])#Add node to Tree
+                                ScanningInfo.reset_scanBuffer()
+                                ScanningInfo.scanLevel02 = 'SearchingForContent'
+                            else:
+                                ScanningInfo.append_Buffer(lineChar)
+                        elif ScanningInfo.scanLevel02 == 'SearchingForContent':
                             print('Placeholder')
                     elif ScanningInfo.scanLevel=='EnterPast1stSubLevelOrListContent':#indentationLevel==2
                         if ScanningInfo.scanLevel02 == '':
-                            print('Placeholder')
-                    elif ScanningInfo.scanLevel=='EnterPast1stSubLevelGrouping':#indentationLevel==2
-                        print('Placeholder')
+                            if lineChar==']':
+                                currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])#Add node to Tree
+                                keyPosition.append(currentNodeKey)
+                                ScanningInfo.reset_scanBuffer()
+                                ScanningInfo.scanLevel02 = 'nextOrListContent'#Search for either node content or subnodes
+                            else:
+                                ScanningInfo.append_Buffer(lineChar)
+                        elif ScanningInfo.scanLevel02 == 'nextOrListContent':
+                            if lineChar=='{':
+                                ScanningInfo.scanLevel02 = '{'#Either entering new node or content is a list
+                        elif ScanningInfo.scanLevel02 == '{'
+                            if lineChar=='[':#Entering next node
+                                print('Placeholder')
+                            elif lineChar!=' ' and lineChar!='\n':
+                                ScanningInfo.scanLevel02 = 'InsideListContent'
+                        elif ScanningInfo.scanLevel02=='InsideListContent':
+                            if lineChar=='}':
+                                ScanningInfo.scanLevel02 = ''
+                            else:
+                                print('placeholder')
                     else:#{
-                        if(ScanningInfo.scanLevel02=='InsideListContent'):
+                        if ScanningInfo.scanLevel02=='InsideListContent':
                             if lineChar=='}':
                                 ScanningInfo.scanLevel02 = ''
                             else:
@@ -451,8 +477,6 @@ class TreeStorage:
       #                      indentationLevel  = self.recursivelyLoadNodeInput(lineChar, ScanningInfo, keyPosition, indentationLevel)
                     #}
             #}
-            #if indentationLevel==-1:#forcing early end to loop because of error
-            #    break;
         #}
         print('Finished loading lua file into node tree.  '+str(lineNumber)+" lines total scanned.\n")
 
