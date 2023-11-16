@@ -15,13 +15,11 @@ class LuaSubNode: pass
 class LuaNode: pass
 
 class ScanInfo:
-    __slots__ = ["scanLevel", "scanBuffer", "topLevelKey", "currentNodeKey"]
+    __slots__ = ["scanLevel", "scanBuffer", "topLevelKey"]
     def __init__(self):
         self.scanLevel = ''
-        self.scanLevel01 = ''
         self.scanBuffer = ''
         self.topLevelKey = ''
-        self.currentNodeKey = ''
         
     def get_scanLevel(self):
         return self.scanLevel
@@ -34,8 +32,6 @@ class ScanInfo:
     
     def set_scanLevel(self, value:str):
         self.scanLevel = value
-        if self.scanLevel01!=''
-            self.scanLevel01 = ''
     
     def set_scanBuffer(self, value:str):
         self.scanBuffer = value
@@ -71,6 +67,7 @@ class LuaSubNode(object):
         #  If name is starts with '{' and ends with number of index in parentnode, then is using {} grouping (such as for mastery node)  
         #  use name[1,-1] to extract information about index
         self.topLevelKey = topLevelKey
+        #If both subnodes size is zero and content is zero, save as empty list with {}
         self.nodeContent:str = ''
         #Actual subnodes stored inside the parent LuaNode (key refers to topLevelKey, value refers to name or element value in case of list element)
         self.subnodes:dict[str,str]={}
@@ -409,8 +406,8 @@ class TreeStorage:
                     elif lineChar=='=':
                         pass#Don't need to do anything here since just going to ignore the existance for now
                     elif lineChar=='}':
-                        if ScanningInfo.scanLevel01=='InsideListContent':
-                            ScanningInfo.scanLevel01 = ''
+                        if ScanningInfo.scanLevel=='InsideListContent':
+                            ScanningInfo.scanLevel = ''
                         else:
                             if len(keyPosition)==0:#Should be exiting TopLevelNode
                                 ScanningInfo.reset_topLevelKey()
@@ -418,7 +415,7 @@ class TreeStorage:
                                 keyPosition.pop();
                             if len(keyPosition)==1:#look for next subnode for topLevelNode
                                 ScanningInfo.set_scanLevel('EnteringTopLevelSubOrListContent')
-                    elif ScanningInfo.scanLevel01=='InsideListContent':
+                    elif ScanningInfo.scanLevel=='InsideListContent':
                         if lineChar==',' or lineChar=='\n':
                             if len(keyPosition)==0:#parentNode is topLevelNode
                                 currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_ListNodeFromTopLevel(ScanningInfo.scanBuffer)
@@ -430,16 +427,16 @@ class TreeStorage:
                         else:
                             ScanningInfo.append_Buffer(lineChar)
 
-                    elif ScanningInfo.scanLevel01 == '':
+                    elif ScanningInfo.scanLevel == '':
                         if lineChar=='{':
                             if '{}' in line:#Empty list node
                                 keyPosition.pop();
                             else:
-                                ScanningInfo.scanLevel01 = '{'
+                                ScanningInfo.scanLevel = '{'
                     
-                    elif ScanningInfo.scanLevel01 == '{':
+                    elif ScanningInfo.scanLevel == '{':
                         if lineChar=='[':
-                            ScanningInfo.scanLevel01 = '['
+                            ScanningInfo.scanLevel = '['
                         elif lineChar=='{':#Add grouping node
                             if len(keyPosition)==0:#parentNode is topLevelNode
                                 currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_GroupNodeFromTopLevel()
@@ -450,8 +447,8 @@ class TreeStorage:
                             keyPosition.append(currentNodeKey)
                         elif lineChar!=' ' and lineChar!='\n':
                             ScanningInfo.scanBuffer = lineChar
-                            ScanningInfo.scanLevel01 = 'InsideListContent'
-                    elif ScanningInfo.scanLevel01 == '[':
+                            ScanningInfo.scanLevel = 'InsideListContent'
+                    elif ScanningInfo.scanLevel == '[':
                         if lineChar==']':
                             #Add node to Tree
                             if len(keyPosition)==0:#parentNode is topLevelNode
@@ -462,19 +459,19 @@ class TreeStorage:
                                 currentNodeKey = self.topLevel[ScanningInfo.topLevelKey].add_SubNodeToSubnode(ScanningInfo.scanBuffer, self.topLevel[ScanningInfo.topLevelKey].recursiveSubNodes[keyPosition[-1]])
                             keyPosition.append(currentNodeKey)
                             ScanningInfo.reset_scanBuffer()
-                            ScanningInfo.scanLevel01 = ']'#Search for either node content,subnodes, or for nodeContent value
+                            ScanningInfo.scanLevel = ']'#Search for either node content,subnodes, or for nodeContent value
                         else:
                             ScanningInfo.append_Buffer(lineChar)
-                    elif ScanningInfo.scanLevel01 == ']':
+                    elif ScanningInfo.scanLevel == ']':
                         if lineChar=='{':
                             if '{}' in line:#Empty list node
                                 keyPosition.pop();
                             else:
-                                ScanningInfo.scanLevel01 = '{'
+                                ScanningInfo.scanLevel = '{'
                         elif lineChar!=' ' and lineChar!='\n':#Entering node content value
                             ScanningInfo.scanBuffer = lineChar
-                            ScanningInfo.scanLevel01 = 'ScanningContent'
-                    elif ScanningInfo.scanLevel01 == 'ScanningContent':
+                            ScanningInfo.scanLevel = 'ScanningContent'
+                    elif ScanningInfo.scanLevel == 'ScanningContent':
                         if lineChar==',' or lineChar=='\n':
                             if len(keyPosition)==0:#parentNode is topLevelNode
                                 self.topLevel[ScanningInfo.topLevelKey].set_nodeContent(ScanningInfo.scanBuffer)
