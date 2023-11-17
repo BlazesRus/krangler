@@ -515,8 +515,10 @@ class TreeStorage:
                                 ScanningInfo.scanLevel = '{'
                     elif ScanningInfo.scanLevel == 'ScanningContent':
                         if lineChar==',' or lineChar=='\n':
-                            if len(keyPosition)==0:#parentNode is topLevelNode
+                            if len(keyPosition)==0:#targetNode is topLevelNode
                                 currentTopLevel.set_nodeContent(ScanningInfo.scanBuffer)
+                                ScanningInfo.topLevelKey = ''
+                                
                             elif len(keyPosition)==1:#parentNode is 1st level subnode
                                 currentTopLevel.subnodes[keyPosition[-1]].set_nodeContent(ScanningInfo.scanBuffer)
                             else:
@@ -526,6 +528,8 @@ class TreeStorage:
                             ScanningInfo.reset_scans()
                         else:
                             ScanningInfo.append_Buffer(lineChar)
+                    elif lineChar=='{':
+                        ScanningInfo.scanLevel = '{'
                     elif lineChar=='[':
                         ScanningInfo.scanLevel = '['
                     elif lineChar!=' ' and lineChar!='\n':#Entering node content value
