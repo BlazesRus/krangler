@@ -129,43 +129,108 @@ class LuaSubNode(object):
             else:
                 stringBuffer += lineChar
         return position
-        
-    def printDebugInfo(self, subnodekeyName:str=''):
-        if subnodekeyName =='':
-            print(' '*8+'Subnode node named '+self.name+' content:\n')
+
+    #Parent is topLevelNode
+    def printNodeContent(self, topLevelNode:LuaNode):
+        actualSubnode:LuaSubNode
+        if(self.name=='{'):
+            print(' '*self.nodeLevel*4+'{')
+            for i, nodeKey in enumerate(self.subnodes.keys()):
+                if i:
+                    print(',')
+                actualSubnode = topLevelNode.subnodes[nodeKey]
+                actualSubnode.printDebugInfo(nodeKey)
+            print(' '*self.nodeLevel*4+'}')
+        elif(self.name==''):#List content
+            print(' '*self.nodeLevel*4+self.nodeContent)
         else:
-            print(' '*8+'Subnode node named '+self.name+' (keyname:'+subnodekeyName+')content:\n')
-        print(' '*8+"Subnode has "+str(len(self.subnodes))+' subnodes.\n')
-        for nodeKey, nodeData in self.subnodes.items():
-            print(' '*12+'Detected child subnode '+nodeKey+" with name of "+nodeData.name+'.\n')
-            print(' '*12+"Child subnode has "+str(len(nodeData.subnodes))+' subnodes.\n')
-            if nodeKey=='\"nodes\"':
-                hasIcon:bool = False
-                isPossibleNormalNode:bool = True
-                for subData in nodeData.subnodes.values:
-                    if subData=='"isNotable"':
-                        print(' '*12+'Notable node with id '+nodeKey+' is stored.\n')
-                        isPossibleNormalNode = False
-                        break
-                    elif subData=='"isMastery"':
-                        print(' '*12+'Nullifying mastery node with id '+nodeKey+' is stored.\n')
-                        isPossibleNormalNode = False
-                        break
-                    elif subData=='"ascendancyName"':
-                        print(' '*12+'Ascendancy node with id '+nodeKey+' is stored.\n')
-                        isPossibleNormalNode = False
-                        break
-                    elif subData=='\"isJewelSocket\"':
-                        print(' '*12+'Jewel node with id '+nodeKey+' is stored.\n')
-                        isPossibleNormalNode = False
-                        break
-                    elif subData=='\"icon\"':
-                        hasIcon = True
-                        break
-                if(isPossibleNormalNode and hasIcon):
-                    print(' '*12+'Normal skill node with id '+nodeKey+' is stored.\n')
-                elif(isPossibleNormalNode):
-                    print(' '*12+'Node with id '+nodeKey+' is stored.\n')
+            print(' '*self.nodeLevel*4+'['+self.name+']', end='')
+            if self.nodeContent != '':
+                print('= '+self.nodeContent, end='')
+            else:
+                print('= {')
+                for i, nodeKey in enumerate(self.subnodes.keys()):
+                    if i:
+                        print(',')
+                actualSubnode = topLevelNode.subnodes[nodeKey]
+                actualSubnode.printNodeContent(nodeKey)
+                print(' '*4+'}', end='')
+
+    def printNodeContentFromSubnode(self, topLevelNode:LuaNode):
+        actualSubnode:LuaSubNode
+        if(self.name=='{'):
+            print(' '*self.nodeLevel*4+'{')
+            for i, nodeKey in enumerate(self.subnodes.keys()):
+                if i:
+                    print(',')
+                actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
+                actualSubnode.printNodeContent(topLevelNode)
+            print(' '*self.nodeLevel*4+'}')
+        elif(self.name==''):#List content
+            print(' '*self.nodeLevel*4+self.nodeContent)
+        else:
+            print(' '*self.nodeLevel*4+'['+self.name+']', end='')
+            if self.nodeContent != '':
+                print('= '+self.nodeContent, end='')
+            else:
+                print('= {')
+                for i, nodeKey in enumerate(self.subnodes.keys()):
+                    if i:
+                        print(',')
+                actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
+                actualSubnode.printNodeContent(topLevelNode)
+                print(' '*4+'}', end='')
+
+    #Parent is topLevelNode
+    def saveNodeToFile(self, topLevelNode:LuaNode, f:TextIOWrapper):
+        actualSubnode:LuaSubNode
+        if(self.name=='{'):
+            f.write(' '*self.nodeLevel*4+'{')
+            for i, nodeKey in enumerate(self.subnodes.keys()):
+                if i:
+                    f.write(',\n')
+                actualSubnode = topLevelNode.subnodes[nodeKey]
+                actualSubnode.printDebugInfo(nodeKey)
+            f.write(' '*self.nodeLevel*4+'}')
+        elif(self.name==''):#List content
+            f.write(' '*self.nodeLevel*4+self.nodeContent)
+        else:
+            f.write(' '*self.nodeLevel*4+'['+self.name+']')
+            if self.nodeContent != '':
+                f.write('= '+self.nodeContent)
+            else:
+                f.write('= {')
+                for i, nodeKey in enumerate(self.subnodes.keys()):
+                    if i:
+                        f.write(',\n')
+                actualSubnode = topLevelNode.subnodes[nodeKey]
+                actualSubnode.printNodeContent(nodeKey)
+                f.write(' '*4+'}', end='')
+
+    def saveNodeToFileFromSubnode(self, topLevelNode:LuaNode, f:TextIOWrapper):
+        actualSubnode:LuaSubNode
+        if(self.name=='{'):
+            f.write(' '*self.nodeLevel*4+'{')
+            for i, nodeKey in enumerate(self.subnodes.keys()):
+                if i:
+                    f.write(',\n')
+                actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
+                actualSubnode.printNodeContent(topLevelNode)
+            f.write(' '*self.nodeLevel*4+'}')
+        elif(self.name==''):#List content
+            f.write(' '*self.nodeLevel*4+self.nodeContent)
+        else:
+            f.write(' '*self.nodeLevel*4+'['+self.name+']', end='')
+            if self.nodeContent != '':
+                f.write('= '+self.nodeContent, end='')
+            else:
+                f.write('= {')
+                for i, nodeKey in enumerate(self.subnodes.keys()):
+                    if i:
+                        f.write(',\n')
+                actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
+                actualSubnode.printNodeContent(topLevelNode)
+                f.write(' '*4+'}', end='')
 
     def add_SubNodeToSubnode(self, name:str):
         #parentsubNode is self.recursiveSubNodes[parentSubnodeKey]
@@ -191,66 +256,6 @@ class LuaSubNode(object):
         self.subnodes[topLevelKey] = value
         #Handling the topLevelNode changes inside topLevelFunction (topLevel[topLevelKey])
         return topLevelKey
-    
-    def NodeOutputFromTopLevel(self, f:TextIOWrapper, currentTopLevelNode:LuaNode):
-        indentation:str = ' '*8
-        if(self.name=='{'):#Grouping node
-            f.write(indentation+'{')
-            self.recursiveNodeOutput(f, currentTopLevelNode, self)
-            f.write(indentation+'}')
-        elif(len(self.subnodes)==0):
-            if(self.name==''):#isListInfo
-                f.write(indentation+self.name)
-            elif(self.nodeContent!=''):
-                f.write(indentation+'[')
-                f.write(self.name)#[240]= { #skillTree ID is outputted at this level
-                f.write('\"]= '+self.nodeContent)
-            else:
-                f.write(indentation+'[')
-                f.write(self.name)#[240]= { #skillTree ID is outputted at this level
-                f.write('\"]= {}')
-        else:
-            f.write(indentation+'[')
-            f.write(self.name)#[240]= { #skillTree ID is outputted at this level
-            f.write('\"]= {')
-            for i, subNodeKey in enumerate(self.subnodes.keys()):
-            #{
-                subNode = currentTopLevelNode.recursiveSubNodes[subNodeKey]
-                if i:#Every element but the first element in list
-                    f.write(',\n')
-                subNode.recursiveNodeOutput(f, currentTopLevelNode, self)
-            #}
-            f.write(' '*8+'}')
-
-    def recursiveNodeOutput(self, f:TextIOWrapper, currentTopLevelNode:LuaNode, parentSubnode:LuaSubNode):
-        indentation:str = ' '*4*self.nodeLevel
-        if(self.name=='{'):#Grouping node
-            f.write(indentation+'{')
-            self.recursiveNodeOutput(f, currentTopLevelNode, self)
-            f.write(indentation+'}')
-        elif(len(self.subnodes)==0):
-            if(self.name==''):#isListInfo
-                f.write(indentation+self.name)
-            elif(self.nodeContent!=''):
-                f.write(indentation+'[')
-                f.write(self.name)#[240]= { #skillTree ID is outputted at this level
-                f.write('\"]= '+self.nodeContent)
-            else:
-                f.write(indentation+'[')
-                f.write(self.name)#[240]= { #skillTree ID is outputted at this level
-                f.write('\"]= {}')
-        else:
-            f.write(indentation+'[')
-            f.write(self.name)#[240]= { #skillTree ID is outputted at this level
-            f.write('\"]= {')
-            for i, subNodeKey in enumerate(self.subnodes.keys()):
-            #{
-                subNode = currentTopLevelNode.recursiveSubNodes[subNodeKey]
-                if i:#Every element but the first element in list
-                    f.write(',\n')
-                subNode.recursiveNodeOutput(f, currentTopLevelNode, self)
-            #}
-            f.write(' '*8+'}')
 
 class LuaNode(object):
     __slots__ = ["name", "nodeContent", "subnodes", "recursiveSubNodes"]
@@ -279,147 +284,144 @@ class LuaNode(object):
     def add_SubNodeFromTopLevel(self, name:str=''):
         topLevelKey:str = self.name+'_'+name
         self.subnodes[topLevelKey] = LuaSubNode(self.name, name, 2, topLevelKey)
-        return topLevelKey;
+        currentSubNode = self.subnodes[topLevelKey]
+        return topLevelKey, currentSubNode
 
     def add_GroupNodeFromTopLevel(self):
         nodeKey:str = self.name+'_'+'{'+str(len(self.subnodes))
         self.subnodes[nodeKey] = LuaSubNode(self.name, '{', 2, nodeKey)
-        return nodeKey;
+        currentSubNode = self.subnodes[nodeKey]
+        return nodeKey, currentSubNode
 
     def add_ListNodeFromTopLevel(self, value:str):
         nodeKey:str = self.name+'_'+str(len(self.subnodes))
         self.subnodes[nodeKey] = LuaSubNode(self.name, '', 2, nodeKey)
         self.subnodes[nodeKey].nodeContent = value
-        return nodeKey;
-        
-
-    def printDebugInfo(self, topLevelkeyName:str=''):
-        if topLevelkeyName =='':
-            print(' '*4+'TopLevel node named '+self.name+'content:\n')
-        else:
-            print(' '*4+'TopLevel node named '+self.name+' (keyname:'+topLevelkeyName+')content:\n')
-        print(' '*4+'has '+str(len(self.subnodes))+' subnodes with those subnodes having a total of '+str(len(self.recursiveSubNodes))+'.\n')
-        for nodeKey, nodeData in self.subnodes.items():
-            nodeData.printDebugInfo(nodeKey)
+        currentSubNode = self.subnodes[nodeKey]
+        return nodeKey, currentSubNode
 
     def add_SubNodeToPrimarySubnode(self, name:str, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.subnodes[parentSubnodeKey]
         #parentKey+_+name
         topLevelKey:str = parentSubnode.add_SubNodeToSubnode(name)
-        self.subnodes[parentSubnodeKey] = LuaSubNode(parentSubnode.topLevelKey, name, parentSubnode.nodeLevel+1, topLevelKey)
-        return topLevelKey
+        lowLevelNodes = self.recursiveSubNodes
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, name, parentSubnode.nodeLevel+1, topLevelKey)
+        currentSubNode = self.recursiveSubNodes[topLevelKey]
+        return topLevelKey, currentSubNode
 
     def add_EmptyListToPrimarySubnode(self, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.subnodes[parentSubnodeKey]
         #parentKey+_+name
         topLevelKey:str = parentSubnode.add_SubNodeToSubnode('')
-        self.subnodes[parentSubnodeKey] = LuaSubNode(parentSubnode.topLevelKey, '', parentSubnode.nodeLevel+1, topLevelKey)
-        return topLevelKey
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, '', parentSubnode.nodeLevel+1, topLevelKey)
+        currentSubNode = self.recursiveSubNodes[topLevelKey]
+        return topLevelKey, currentSubNode
 
     def add_GroupNodeToPrimarySubnode(self, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.subnodes[parentSubnodeKey]
         #parentKey+_+name
         topLevelKey:str = parentSubnode.add_GroupNodeToSubnode()
-        self.subnodes[parentSubnodeKey] = LuaSubNode(parentSubnode.topLevelKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
-        return topLevelKey
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
+        currentSubNode = self.recursiveSubNodes[topLevelKey]
+        return topLevelKey, currentSubNode
     
     def add_ListNodeToPrimarySubnode(self, value:str, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.subnodes[parentSubnodeKey]
         #parentKey+_+name
         topLevelKey:str = parentSubnode.add_ListNodeToSubnode(value)
-        self.subnodes[parentSubnodeKey] = LuaSubNode(parentSubnode.topLevelKey, '', parentSubnode.nodeLevel+1, topLevelKey)
-        self.subnodes[parentSubnodeKey].set_nodeContent(value)
-        return topLevelKey
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, '', parentSubnode.nodeLevel+1, topLevelKey)
+        self.recursiveSubNodes[topLevelKey].set_nodeContent(value)
+        currentSubNode = self.recursiveSubNodes[topLevelKey]
+        return topLevelKey, currentSubNode
     
     def add_SubNodeToLowLevelNode(self, name:str, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.recursiveSubNodes[parentSubnodeKey]
         #parentKey+_+name
         topLevelKey:str = parentSubnode.add_SubNodeToSubnode(name)
-        self.recursiveSubNodes[parentSubnodeKey] = LuaSubNode(parentSubnode.topLevelKey, name, parentSubnode.nodeLevel+1, topLevelKey)
-        return topLevelKey
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, name, parentSubnode.nodeLevel+1, topLevelKey)
+        currentSubNode = self.recursiveSubNodes[topLevelKey]
+        return topLevelKey, currentSubNode
 
     def add_EmptyListToLowLevelNode(self, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.recursiveSubNodes[parentSubnodeKey]
         #parentKey+_+name
         topLevelKey:str = parentSubnode.add_SubNodeToSubnode('')
-        self.recursiveSubNodes[parentSubnodeKey] = LuaSubNode(parentSubnode.topLevelKey, '', parentSubnode.nodeLevel+1, topLevelKey)
-        return topLevelKey
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, '', parentSubnode.nodeLevel+1, topLevelKey)
+        currentSubNode = self.recursiveSubNodes[topLevelKey]
+        return topLevelKey, currentSubNode
 
     def add_GroupNodeToLowLevelNode(self, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.recursiveSubNodes[parentSubnodeKey]
         #parentKey+_+name
         topLevelKey:str = parentSubnode.add_GroupNodeToSubnode()
-        self.recursiveSubNodes[parentSubnodeKey] = LuaSubNode(parentSubnode.topLevelKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
-        return topLevelKey
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, '{', parentSubnode.nodeLevel+1, topLevelKey)
+        currentSubNode = self.recursiveSubNodes[topLevelKey]
+        return topLevelKey, currentSubNode
     
     def add_ListNodeToLowLevelNode(self, value:str, parentSubnodeKey:str):
         parentSubnode:LuaSubNode = self.recursiveSubNodes[parentSubnodeKey]
         #parentKey+_+name
         topLevelKey:str = parentSubnode.add_ListNodeToSubnode(value)
-        self.recursiveSubNodes[parentSubnodeKey] = LuaSubNode(parentSubnode.topLevelKey, '', parentSubnode.nodeLevel+1, topLevelKey)
-        self.recursiveSubNodes[parentSubnodeKey].set_nodeContent(value)
-        return topLevelKey
+        self.recursiveSubNodes[topLevelKey] = LuaSubNode(parentSubnode.topLevelKey, '', parentSubnode.nodeLevel+1, topLevelKey)
+        self.recursiveSubNodes[topLevelKey].set_nodeContent(value)
+        currentSubNode = self.recursiveSubNodes[topLevelKey]
+        return topLevelKey, currentSubNode
     
     def set_primarySubNodeContent(self, topLevelKey:str, value:str):
         self.subnodes[topLevelKey].set_nodeContent(value)
 
     def set_lowLevelContent(self, topLevelKey:str, value:str):
         self.recursiveSubNodes[topLevelKey].set_nodeContent(value)
- 
+
+    def printNodeContent(self):
+        print(' '*4+'['+self.name+']', end='')
+        if self.nodeContent != '':
+            print('= '+self.nodeContent, end='')
+        else:
+            print('= {')
+            for i, nodeData in enumerate(self.subnodes.values()):
+                if i:
+                    print(',')
+                nodeData.printNodeContent(self)
+            print(' '*4+'}', end='')
+
+    def saveNodeToFile(self, f:TextIOWrapper):
+        f.write(' '*4+'['+self.name+']')
+        if self.nodeContent != '':
+            f.write('= '+self.nodeContent)
+        else:
+            f.write('= {')
+            for i, nodeData in enumerate(self.subnodes.values()):
+                if i:
+                    f.write(',\n')
+                nodeData.saveNodeToFile(self, f)
+            f.write(' '*4+'}')
+
 class TreeStorage:
     __slots__ = ["RootStart", "topLevel"]
-    def __init__(self, fileData:list[str]):
+    def __init__(self):
         #Lines starting from top of file until first top level node group start stored here
         self.RootStart:str = ''
         #top level nodes such as "nodes" and "max_x" initialized here (topLevel['\"nodes\"'] to access skill node data)
         self.topLevel:dict[str, LuaNode] = {}
-        if(fileData!={}):
-            self.generateNodeTree(fileData)
 
-    def reconstructAndSave_Tree(self, outputDirectory, fname='tree.lua'):
-        fullPath:str
-        if(outputDirectory=='./Debug/'):
-            fullPath = './Debug/'+'tree.lua'
+    def generateNodeTree(self, inputDirectory):
+        if(inputDirectory=='./Debug/'):
+            fullPath = './Debug/'+'DebugInput.lua'
         else:
-            fullPath = outputDirectory+fname
-    #   print('Saving edited tree to '+fullPath+'. \n')
-        with open(fullPath,'w') as f:
-            f.write(self.RootStart)
-            for topLevelKey,topLevelNode in self.topLevel.items():#{
-                f.write(' '*4+'[\"')
-                f.write(topLevelNode.name)#outputs ["nodes"]= { at this level
-                f.write('\"]= ')
-                if topLevelNode.hasSubNodes()==False:
-                    f.write(topLevelNode.nodeContent)
-                    f.write(',\n')
-                else:#if(topLevelNode.hasSubNodes()):
-                    f.write('{\n')
-                    for i, (subKey, subNode) in enumerate(topLevelNode.subnodes.items()):
-                    #{
-                        if i:#Every element but the first element in list
-                            f.write(',\n')
-                        subNode.NodeOutputFromTopLevel(f, topLevelNode)
-                    #}
-            #}
-            f.write('}')
-            f.close();
-
-    def generateNodeTree(self, fileData:list[str]):
+            fullPath = inputDirectory+'tree.lua'
         topLevel_luaNodeLineNumber = -1
         lineNumber = -1
-        currentNodeName:str
         #Can be passed as reference unlike string information and keeps better track of node position
         keyPosition:list[str] = []
-        #Indentation level for topLevel nodes are at 1 indentation, actual data for nodes starts at 2 indentation
-        #Might remove and just check size of keyPosition
-        indentationLevel:int;
         #Making use of python's object references to treat variable information as pass-by-reference equivalent
         ScanningInfo:ScanInfo = ScanInfo()
-        currentNodeKey:str
-        lastNodeKey:str
         currentTopLevel:LuaNode#Using as reference to current topLevel element
+        currentNodeKey:str
+        #lastNodeKey:str
+        currentSubNode:LuaSubNode#Reference to last subnode added
 
-        for line in fileData:#{
+        for line in open(fullPath,'r').readlines():#{
             lineNumber += 1;
             if(topLevel_luaNodeLineNumber==-1):#Add to root level before actual node info starts
             #{
@@ -460,14 +462,18 @@ class TreeStorage:
                                 keyPosition.pop();
                             if len(keyPosition)==1:#look for next subnode for topLevelNode
                                 ScanningInfo.set_scanLevel('EnteringTopLevelSubOrListContent')
+                                currentSubNode = currentTopLevel.subnodes[currentNodeKey]
+                            elif len(keyPosition)>0:#Update current subnode
+                                currentSubNode = currentTopLevel.recursiveSubNodes[currentNodeKey]
                     elif ScanningInfo.scanLevel=='InsideListContent':
                         if lineChar==',' or lineChar=='\n':
                             if len(keyPosition)==0:#parentNode is topLevelNode
-                                currentNodeKey = currentTopLevel.add_ListNodeFromTopLevel(ScanningInfo.scanBuffer)
-                            elif len(keyPosition)==1:#parentNode is 1st level subnode
-                                currentNodeKey = currentTopLevel.add_ListNodeToPrimarySubnode(ScanningInfo.scanBuffer, keyPosition[-1])
+                                currentTopLevel.add_ListNodeFromTopLevel(ScanningInfo.scanBuffer)
                             else:
-                                currentNodeKey = currentTopLevel.add_ListNodeToLowLevelNode(ScanningInfo.scanBuffer, keyPosition[-1])
+                                if len(keyPosition)==1:#parentNode is 1st level subnode
+                                    currentTopLevel.add_ListNodeToPrimarySubnode(ScanningInfo.scanBuffer, keyPosition[-1])
+                                else:
+                                    currentTopLevel.add_ListNodeToLowLevelNode(ScanningInfo.scanBuffer, keyPosition[-1])
                             ScanningInfo.reset_scanBuffer()
                         else:
                             ScanningInfo.append_Buffer(lineChar)
@@ -484,11 +490,12 @@ class TreeStorage:
                             ScanningInfo.scanLevel = '['
                         elif lineChar=='{':#Add grouping node
                             if len(keyPosition)==0:#parentNode is topLevelNode
-                                currentNodeKey = currentTopLevel.add_GroupNodeFromTopLevel()
-                            elif len(keyPosition)==1:#parentNode is 1st level subnode
-                                currentNodeKey = currentTopLevel.add_GroupNodeToPrimarySubnode(keyPosition[-1])
+                                currentNodeKey, currentSubNode = currentTopLevel.add_GroupNodeFromTopLevel()
                             else:
-                                currentNodeKey = currentTopLevel.add_GroupNodeToLowLevelNode(keyPosition[-1])
+                                if len(keyPosition)==1:#parentNode is 1st level subnode
+                                    currentNodeKey, currentSubNode = currentTopLevel.add_GroupNodeToPrimarySubnode(keyPosition[-1])
+                                else:
+                                    currentNodeKey, currentSubNode = currentTopLevel.add_GroupNodeToLowLevelNode(keyPosition[-1])
                             keyPosition.append(currentNodeKey)
                         elif lineChar!=' ' and lineChar!='\n':
                             ScanningInfo.scanBuffer = lineChar
@@ -497,11 +504,12 @@ class TreeStorage:
                         if lineChar==']':
                             #Add node to Tree
                             if len(keyPosition)==0:#parentNode is topLevelNode
-                                currentNodeKey = currentTopLevel.add_SubNodeFromTopLevel(ScanningInfo.scanBuffer)
-                            elif len(keyPosition)==1:#parentNode is 1st level subnode
-                                currentNodeKey = currentTopLevel.add_SubNodeToPrimarySubnode(ScanningInfo.scanBuffer, keyPosition[-1])
+                                currentNodeKey, currentSubNode = currentTopLevel.add_SubNodeFromTopLevel(ScanningInfo.scanBuffer)
                             else:
-                                currentNodeKey = currentTopLevel.add_SubNodeToLowLevelNode(ScanningInfo.scanBuffer, keyPosition[-1])
+                                if len(keyPosition)==1:#parentNode is 1st level subnode
+                                    currentNodeKey, currentSubNode = currentTopLevel.add_SubNodeToPrimarySubnode(ScanningInfo.scanBuffer, keyPosition[-1])
+                                else:
+                                    currentNodeKey, currentSubNode = currentTopLevel.add_SubNodeToLowLevelNode(ScanningInfo.scanBuffer, keyPosition[-1])
                             keyPosition.append(currentNodeKey)
                             ScanningInfo.reset_scanBuffer()
                             ScanningInfo.scanLevel = ']'#Search for either node content,subnodes, or for nodeContent value
@@ -517,12 +525,11 @@ class TreeStorage:
                         if lineChar==',' or lineChar=='\n':
                             if len(keyPosition)==0:#targetNode is topLevelNode
                                 currentTopLevel.set_nodeContent(ScanningInfo.scanBuffer)
-                                ScanningInfo.topLevelKey = ''
-                                
+                                ScanningInfo.topLevelKey = '' 
                             elif len(keyPosition)==1:#parentNode is 1st level subnode
-                                currentTopLevel.subnodes[keyPosition[-1]].set_nodeContent(ScanningInfo.scanBuffer)
+                                currentSubNode.set_nodeContent(ScanningInfo.scanBuffer)
                             else:
-                                currentTopLevel.recursiveSubNodes[keyPosition[-1]].set_nodeContent(ScanningInfo.scanBuffer)
+                                currentSubNode.set_nodeContent(ScanningInfo.scanBuffer)
                             if len(keyPosition)>0:
                                 keyPosition.pop();
                             ScanningInfo.reset_scans()
@@ -572,11 +579,11 @@ class TreeStorage:
         else:
             print('Error:Nodes group doesn\'t exist inside file')
 
-    def printDebugInfo(self):
-        print("Total of "+str(len(self.topLevel))+' top level nodes detected.\n')
-        print("Listing top level nodes and information about each skill node detected:\n")
-        for topLevelNodeKey, topLevelNodeData in self.topLevel.items():
-            topLevelNodeData.printDebugInfo(topLevelNodeKey)
+    def printNodeContent(self):
+        for i, topLevelNodeData in enumerate(self.topLevel.values()):
+            if i:
+                print(',')
+            topLevelNodeData.printNodeContent()
         
     def replace_node(self, original_topLevel:dict[str, LuaNode], node_id:str, replace_id:str):
         print('Placeholder')
@@ -606,20 +613,30 @@ class TreeStorage:
                     self.nullify_normal_node(nodeKey)
         else:
             print('Error:Nodes group doesn\'t exist inside file')
-        
-def load_tree(inputDirectory, fname='tree.lua'):
-    if(inputDirectory=='./Debug/'):
-        fullPath = './Debug/'+'DebugInput.lua'
-    else:
-        fullPath = inputDirectory+fname
- #   print('Loading tree from '+fullPath+'. \n')
-    return open(fullPath,'r').readlines()
+            
+    def reconstructAndSave_Tree(self, outputDirectory, fname='tree.lua'):
+        fullPath:str
+        if(outputDirectory=='./Debug/'):
+            fullPath = './Debug/'+'tree.lua'
+        else:
+            fullPath = outputDirectory+fname
+    #   print('Saving edited tree to '+fullPath+'. \n')
+        with open(fullPath,'w') as f:
+            f.write(self.RootStart)
+            for i, topLevelNode in enumerate(self.topLevel.values()):#{
+                if i:
+                    f.write(',\n')
+                topLevelNode.saveNodeToFile(f)
+            #}
+            f.write('}')
+            f.close();
 
 def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     all_jsons = glob.glob(basedir+'*.json')
-    originalFileData = load_tree(inputDirectory)
     #Parsing lines into nodes instead of editing the file data directly
-    original_tree:TreeStorage = TreeStorage(originalFileData)
+    original_tree:TreeStorage = TreeStorage()
+    original_tree.generateNodeTree(inputDirectory)
+    original_tree.printNodeContent()
     modified_tree:TreeStorage = copy.deepcopy(original_tree)
     nodeReplacementInfo:dict[str, str]={}
 
