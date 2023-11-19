@@ -152,8 +152,8 @@ class LuaSubNode(object):
                 for i, nodeKey in enumerate(self.subnodes.keys()):
                     if i:
                         print(',')
-                actualSubnode = topLevelNode.subnodes[nodeKey]
-                actualSubnode.printNodeContent(nodeKey)
+                    actualSubnode = topLevelNode.subnodes[nodeKey]
+                    actualSubnode.printNodeContent(nodeKey)
                 print(' '*4+'}', end='')
 
     def printNodeContentFromSubnode(self, topLevelNode:LuaNode):
@@ -177,8 +177,8 @@ class LuaSubNode(object):
                 for i, nodeKey in enumerate(self.subnodes.keys()):
                     if i:
                         print(',')
-                actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
-                actualSubnode.printNodeContent(topLevelNode)
+                    actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
+                    actualSubnode.printNodeContent(topLevelNode)
                 print(' '*4+'}', end='')
 
     #Parent is topLevelNode
@@ -203,8 +203,8 @@ class LuaSubNode(object):
                 for i, nodeKey in enumerate(self.subnodes.keys()):
                     if i:
                         f.write(',\n')
-                actualSubnode = topLevelNode.subnodes[nodeKey]
-                actualSubnode.printNodeContent(nodeKey)
+                    actualSubnode = topLevelNode.subnodes[nodeKey]
+                    actualSubnode.printNodeContent(nodeKey)
                 f.write(' '*4+'}', end='')
 
     def saveNodeToFileFromSubnode(self, topLevelNode:LuaNode, f:TextIOWrapper):
@@ -228,8 +228,8 @@ class LuaSubNode(object):
                 for i, nodeKey in enumerate(self.subnodes.keys()):
                     if i:
                         f.write(',\n')
-                actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
-                actualSubnode.printNodeContent(topLevelNode)
+                    actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
+                    actualSubnode.printNodeContent(topLevelNode)
                 f.write(' '*4+'}', end='')
 
     def add_SubNodeToSubnode(self, name:str):
