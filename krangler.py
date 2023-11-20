@@ -331,7 +331,7 @@ class LuaNode(object):
                 if i:
                     print(',')
                 nodeData.printNodeContent(self)
-            print(' '*4+'}', end='')
+            print(' '*4+'}')
 
     def saveNodeToFile(self, f:TextIOWrapper):
         f.write(' '*4+'['+self.name+']')
@@ -461,6 +461,8 @@ class TreeStorage:
                             keyPosition.append(currentNodeKey)
                             ScanningInfo.reset_scanBuffer()
                             ScanningInfo.scanLevel = ']'#Search for either node content,subnodes, or for nodeContent value
+                        elif lineChar==' ':
+                            print("Bug:Encountered space inside of subnode name?")
                         else:
                             ScanningInfo.append_Buffer(lineChar)
                     elif ScanningInfo.scanLevel == ']':
@@ -473,7 +475,7 @@ class TreeStorage:
                         if lineChar==',' or lineChar=='\n':
                             if len(keyPosition)==0:#targetNode is topLevelNode
                                 currentTopLevel.set_nodeContent(ScanningInfo.scanBuffer)
-                                ScanningInfo.topLevelKey = '' 
+                                ScanningInfo.topLevelKey = ''
                             elif len(keyPosition)==1:#parentNode is 1st level subnode
                                 currentSubNode.set_nodeContent(ScanningInfo.scanBuffer)
                             else:
