@@ -139,7 +139,7 @@ class LuaSubNode(object):
                 if i:
                     print(',')
                 actualSubnode = topLevelNode.subnodes[nodeKey]
-                actualSubnode.printDebugInfo(nodeKey)
+                actualSubnode.printNodeContentFromSubnode(nodeKey)
             print(' '*self.nodeLevel*4+'}')
         elif(self.name==''):#List content
             print(' '*self.nodeLevel*4+self.nodeContent)
@@ -153,7 +153,7 @@ class LuaSubNode(object):
                     if i:
                         print(',')
                     actualSubnode = topLevelNode.subnodes[nodeKey]
-                    actualSubnode.printNodeContent(nodeKey)
+                    actualSubnode.printNodeContentFromSubnode(nodeKey)
                 print(' '*4+'}', end='')
 
     def printNodeContentFromSubnode(self, topLevelNode:LuaNode):
@@ -164,7 +164,7 @@ class LuaSubNode(object):
                 if i:
                     print(',')
                 actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
-                actualSubnode.printNodeContent(topLevelNode)
+                actualSubnode.printNodeContentFromSubnode(topLevelNode)
             print(' '*self.nodeLevel*4+'}')
         elif(self.name==''):#List content
             print(' '*self.nodeLevel*4+self.nodeContent)
@@ -178,7 +178,7 @@ class LuaSubNode(object):
                     if i:
                         print(',')
                     actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
-                    actualSubnode.printNodeContent(topLevelNode)
+                    actualSubnode.printNodeContentFromSubnode(topLevelNode)
                 print(' '*4+'}', end='')
 
     #Parent is topLevelNode
@@ -190,7 +190,7 @@ class LuaSubNode(object):
                 if i:
                     f.write(',\n')
                 actualSubnode = topLevelNode.subnodes[nodeKey]
-                actualSubnode.printDebugInfo(nodeKey)
+                actualSubnode.saveNodeToFileFromSubnode(nodeKey)
             f.write(' '*self.nodeLevel*4+'}')
         elif(self.name==''):#List content
             f.write(' '*self.nodeLevel*4+self.nodeContent)
@@ -204,7 +204,7 @@ class LuaSubNode(object):
                     if i:
                         f.write(',\n')
                     actualSubnode = topLevelNode.subnodes[nodeKey]
-                    actualSubnode.printNodeContent(nodeKey)
+                    actualSubnode.saveNodeToFileFromSubnode(nodeKey)
                 f.write(' '*4+'}', end='')
 
     def saveNodeToFileFromSubnode(self, topLevelNode:LuaNode, f:TextIOWrapper):
