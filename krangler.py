@@ -153,7 +153,7 @@ class LuaSubNode(object):
                         print(',')
                     actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
                     actualSubnode.printNodeContent(nodeKey)
-                print(' '*4+'}', end='')
+                print(' '*4+'}')
 
     def saveNodeToFile(self, topLevelNode:LuaNode, f:TextIOWrapper):
         actualSubnode:LuaSubNode
@@ -172,13 +172,13 @@ class LuaSubNode(object):
             if self.nodeContent != '':
                 f.write('= '+self.nodeContent)
             else:
-                f.write('= {')
+                f.write('= {\n')
                 for i, nodeKey in enumerate(self.subnodes.keys()):
                     if i:
                         f.write(',\n')
                     actualSubnode = topLevelNode.recursiveSubNodes[nodeKey]
                     actualSubnode.saveNodeToFile(nodeKey)
-                f.write(' '*4+'}', end='')
+                f.write(' '*4+'}\n')
 
     def add_SubNodeToSubnode(self, name:str):
         #parentsubNode is self.recursiveSubNodes[parentSubnodeKey]
