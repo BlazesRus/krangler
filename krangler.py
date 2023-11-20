@@ -462,7 +462,9 @@ class TreeStorage:
                             ScanningInfo.reset_scanBuffer()
                             ScanningInfo.scanLevel = ']'#Search for either node content,subnodes, or for nodeContent value
                         elif lineChar==' ':
-                            print("Bug:Encountered space inside of subnode name?")
+                            print("Bug:Encountered space inside of subnode name.")
+                        elif lineChar==',':
+                            print("Bug:Encountered , inside of subnode name.")
                         else:
                             ScanningInfo.append_Buffer(lineChar)
                     elif ScanningInfo.scanLevel == ']':
