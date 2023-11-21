@@ -614,10 +614,13 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
         for line in range(len(node_df)):
             nodeReplacementInfo[node_df.iloc[line]['original']] = node_df.iloc[line]['new']
 
+        #Displaying node replacement info as debug test
+        for nodeInfoKey, newValue in nodeReplacementInfo.items():
+            print(str(nodeInfoKey)+' : '+str(newValue))
         #Test NodeTree generation and reconstruction before creating new code for replacing nodes
-        modified_tree.replace_nodes(original_tree.topLevel, nodeReplacementInfo)
+        #modified_tree.replace_nodes(original_tree.topLevel, nodeReplacementInfo)
 
-        modified_tree.nullifyUnusedNodes(original_tree.topLevel, nodeReplacementInfo)
+        #modified_tree.nullifyUnusedNodes(original_tree.topLevel, nodeReplacementInfo)
     #}
     modified_tree.reconstructAndSave_Tree(outputDirectory)
 
