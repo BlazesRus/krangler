@@ -21,6 +21,8 @@
   <ItemGroup>
     <Content Include="dataFolderInputOverride.txt" />
     <Content Include="dataFolderOutputOverride.txt" />
+    <Content Include="Debug\DebugInput.lua" />
+    <Content Include="Debug\tree.lua" />
     <Content Include="pob_location.txt" />
   </ItemGroup>
   <ItemGroup>
