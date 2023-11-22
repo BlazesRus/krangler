@@ -461,6 +461,7 @@ class TreeStorage:
                             keyPosition.append(currentNodeKey)
                             ScanningInfo.reset_scanBuffer()
                             ScanningInfo.scanLevel = ']'#Search for either node content,subnodes, or for nodeContent value
+                        #if code works correctly, then should not find ' ' or ',' within tag (Debug break points on print statements here)
                         elif lineChar==' ':
                             print("Bug:Encountered space inside of subnode name.")
                         elif lineChar==',':
@@ -588,7 +589,7 @@ def replace_all_nodes(inputDirectory, outputDirectory, basedir='./data/'):
     #Parsing lines into nodes instead of editing the file data directly
     original_tree:TreeStorage = TreeStorage()
     original_tree.generateNodeTree(inputDirectory)
-    original_tree.printNodeContent()
+    #original_tree.printNodeContent()
     modified_tree:TreeStorage = copy.deepcopy(original_tree)
     nodeReplacementInfo:dict[str, str]={}
 
